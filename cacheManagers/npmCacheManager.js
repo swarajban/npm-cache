@@ -10,8 +10,14 @@ NpmCacheManager.prototype.constructor = NpmCacheManager;
 
 // Override BaseCacheManager methods
 NpmCacheManager.prototype.name = 'npm';
+
 NpmCacheManager.prototype.getConfigPath = function () {
-  return path.resolve(__dirname, '..', 'package.json');
+  return path.resolve(process.cwd(), 'package.json');
 };
+
+NpmCacheManager.prototype.installDependencies = function () {
+  this.cacheLogInfo('about to install das dependencies');
+};
+
 
 module.exports = NpmCacheManager;

@@ -1,4 +1,5 @@
 var fs = require('fs');
+var path = require('path');
 var logger = require('../util/logger');
 var md5 = require('MD5');
 
@@ -6,17 +7,9 @@ function BaseCacheManager (cacheDirectory) {
   this.cacheDirectory = cacheDirectory;
 }
 
-var getHomeDirectory = function () {
-  return process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE;
-};
-
 var getFileHash = function (filePath) {
   var file = fs.readFileSync(filePath);
   return md5(file);
-};
-
-var cacheExists = function (hash) {
-  var home = getHomeDirectory();
 };
 
 BaseCacheManager.prototype.name = 'BaseCacheManager';
@@ -33,7 +26,16 @@ BaseCacheManager.prototype.cacheLogError = function (error) {
   logger.logError('[' + this.name + '] ' + error);
 };
 
+BaseCacheManager.prototype.cacheExists = function (hash) {
+  var cachedPath = path.resolve(this.cacheDirectory, hash + '.tar.gz');
+  return fs.existsSync(cachedPath);
+};
+
 BaseCacheManager.prototype.installDependencies = function () {
+  logger.logError('Override installDependencies() in subclasses!');
+};
+
+BaseCacheManager.prototype.loadDependencies = function () {
   // Verify file exists
   if (! fs.existsSync(this.getConfigPath())) {
     this.cacheLogError('Could not find config path');
@@ -46,11 +48,13 @@ BaseCacheManager.prototype.installDependencies = function () {
   this.cacheLogInfo('hash: ' + hash);
 
   // Check for ~/.package_cache/{{hash}}.tar.gz
-  if (cacheExists(hash)) {
+  if (this.cacheExists(hash)) {
+    console.log('cache exists');
     // install from cache
   }
   else {
-    // install, and then cache
+    this.installDependencies();
+    // then cache
   }
 
   this.cacheLogInfo('installed dependencies');
