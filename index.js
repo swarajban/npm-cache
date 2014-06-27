@@ -4,7 +4,7 @@ var NpmCacheManager = require('./cacheManagers/npmCacheManager');
 
 var init = function () {
   var cacheManagers = [];
-  cacheManagers.push(new NpmCacheManager());
+  cacheManagers.push(new NpmCacheManager('1234'));
 
   _.forEach(cacheManagers, function (cacheManager) {
     cacheManager.installDependencies();
