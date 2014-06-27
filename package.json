@@ -1,0 +1,23 @@
+{
+  "name": "npm-cache",
+  "version": "0.0.1",
+  "description": "cache npm installs to local machine",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/swarajban/npm-cache.git"
+  },
+  "keywords": [
+    "npm",
+    "cache",
+    "npm",
+    "install"
+  ],
+  "author": "swaraj",
+  "private": true,
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/swarajban/npm-cache/issues"
+  },
+  "homepage": "https://github.com/swarajban/npm-cache"
+}
