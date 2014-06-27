@@ -1,24 +1,56 @@
 var fs = require('fs');
-var path = require('path');
 var logger = require('../util/logger');
+var md5 = require('MD5');
 
 
 function BaseCacheManager () {
+  var getHomeDirectory = function () {
+    return process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE;
+  };
+
+  var getFileHash = function (filePath) {
+    var file = fs.readFileSync(filePath);
+    return md5(file);
+  };
+
+  var cacheExists = function (hash) {
+    var home = getHomeDirectory();
+
+  };
+
   return {
     name: 'BaseCacheManager',
     getConfigPath: function () {
-      logger.logError('Override getConfigPath() in subclasses!')
+      logger.logError('Override getConfigPath() in subclasses!');
     },
-    verifyConfigExists: function () {
-      var configPath = path.resolve(__dirname, '..',  this.getConfigPath());
-      return fs.existsSync(configPath);
+    cacheLogInfo: function (message) {
+      logger.logInfo('[' + this.name + '] ' + message);
+
+    },
+    cacheLogError: function (error) {
+      logger.logError('[' + this.name + '] ' + error);
     },
     installDependencies: function () {
-      if (! this.verifyConfigExists()) {
-        logger.logError('Could not find config path for ' + this.name);
+      // Verify file exists
+      if (! fs.existsSync(this.getConfigPath())) {
+        this.cacheLogError('Could not find config path');
         return;
       }
-      logger.logInfo('installed dependencies for ' + this.name);
+      this.cacheLogInfo('config file exists');
+
+      // Get hash of file
+      var hash = getFileHash(this.getConfigPath());
+      this.cacheLogInfo('hash: ' + hash);
+
+      // Check for ~/.package_cache/{{hash}}.tar.gz
+      if (cacheExists(hash)) {
+        // install from cache
+      }
+      else {
+        // install, and then cache
+      }
+
+      this.cacheLogInfo('installed dependencies');
     }
   }
 }
