@@ -1,5 +1,6 @@
 var CacheDependencyManager = require('./baseCacheDependencyManager');
 var path = require('path');
+var fs = require('fs');
 var shell = require('shelljs');
 
 // Inherit from CacheDependencyManager
@@ -23,7 +24,17 @@ BowerCacheDependencyManager.prototype.getCliName = function () {
 };
 
 BowerCacheDependencyManager.prototype.getInstalledDirectory = function () {
-  return 'bower_components';
+  var bowerComponentLocation = 'bower_components';
+  var bowerRcPath = path.resolve(process.cwd(), '.bowerrc');
+  if (fs.existsSync(bowerRcPath)) {
+    var bowerRcFile = fs.readFileSync(bowerRcPath);
+    var bowerRc = JSON.parse(bowerRcFile);
+    if (bowerRc.directory) {
+      bowerComponentLocation = bowerRc.directory;
+      this.cacheLogInfo('bower_components located at ' + bowerComponentLocation + ' per bowerrc');
+    }
+  }
+  return bowerComponentLocation;
 };
 
 BowerCacheDependencyManager.prototype.installDependencies = function () {

@@ -43,30 +43,17 @@ CacheDependencyManager.prototype.installDependencies = function () {
   logger.logError('Override installDependencies() in subclasses!');
 };
 
-CacheDependencyManager.prototype.archiveDependencies = function (cachePath, onFinish) {
-  var self = this;
-  var installedDirectory = path.resolve(process.cwd(), this.getInstalledDirectory());
-  new targz().compress(installedDirectory, cachePath,
-    function (err) {
-      if (err) {
-        self.cacheLogError('error compressing directory');
-      } else {
-        onFinish();
-      }
-    }
-  );
+CacheDependencyManager.prototype.archiveDependencies = function (cachePath) {
+  var installedDirectory = this.getInstalledDirectory();
+  this.cacheLogInfo('archiving dependencies from ' + installedDirectory);
+  shell.exec('tar -zcf ' + cachePath + ' ' + installedDirectory);
+  this.cacheLogInfo('done archiving');
 };
 
-CacheDependencyManager.prototype.extractDependencies = function (cachePath, onFinish) {
-  var self = this;
-  new targz().extract(cachePath, process.cwd(),
-    function (err) {
-      if (err) {
-        self.cacheLogError('error extracting cached directory: ' + cachePath);
-      } else {
-        onFinish();
-      }
-    });
+CacheDependencyManager.prototype.extractDependencies = function (cachePath) {
+  this.cacheLogInfo('extracting dependencies from ' + cachePath);
+  shell.exec('tar -zxf ' + cachePath);
+  this.cacheLogInfo('done extracting');
 };
 
 CacheDependencyManager.prototype.loadDependencies = function () {
@@ -81,29 +68,23 @@ CacheDependencyManager.prototype.loadDependencies = function () {
 
   // Get hash of dependency config file
   var hash = getFileHash(this.getConfigPath());
-  this.cacheLogInfo('hash: ' + hash);
+  this.cacheLogInfo('hash of ' + this.getConfigPath() + ': ' + hash);
   // cachePath is absolute path to where local cache of dependencies is located
   var cachePath = path.resolve(this.cacheDirectory, hash + '.tar.gz');
 
   // Check if local cache of dependencies exists
   if (fs.existsSync(cachePath)) {
     console.log('cache exists');
-    this.extractDependencies(cachePath,
-      function onExtracted () {
-        self.cacheLogInfo('extracted cached dependencies');
-      }
-    );
+    this.extractDependencies(cachePath);
+    self.cacheLogInfo('finished loading cached dependencies');
   } else { // install dependencies with CLI tool and cache
     if (! shell.which(this.getCliName())) {
       this.cacheLogError('Command line tool ' + this.getCliName() + ' not installed');
       return;
     }
     this.installDependencies();
-    this.archiveDependencies(cachePath,
-      function onArchived () {
-        self.cacheLogInfo('installed and archived dependencies');
-      }
-    );
+    this.archiveDependencies(cachePath);
+    self.cacheLogInfo('installed and archived dependencies');
   }
 };
 
