@@ -22,6 +22,7 @@
   "homepage": "https://github.com/swarajban/npm-cache",
   "dependencies": {
     "MD5": "^1.2.1",
-    "lodash": "^2.4.1"
+    "lodash": "^2.4.1",
+    "shelljs": "^0.3.0"
   }
 }
