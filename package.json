@@ -23,6 +23,7 @@
   "dependencies": {
     "MD5": "^1.2.1",
     "lodash": "^2.4.1",
-    "shelljs": "^0.3.0"
+    "shelljs": "^0.3.0",
+    "tar.gz": "^0.1.1"
   }
 }

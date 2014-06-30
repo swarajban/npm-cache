@@ -27,14 +27,12 @@ NpmCacheManager.prototype.getInstalledDirectory = function () {
 };
 
 NpmCacheManager.prototype.installDependencies = function () {
-  this.cacheLogInfo('about to install npm dependencies');
+  this.cacheLogInfo('installing npm dependencies...');
   if (shell.exec('npm install').code !== 0) {
     this.cacheLogError('error running npm install');
     return;
   }
   this.cacheLogInfo('installed npm dependencies, now archiving');
-
-
 };
 
 
