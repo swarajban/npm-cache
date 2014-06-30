@@ -5,7 +5,8 @@ var md5 = require('MD5');
 var shell = require('shelljs');
 var targz = require('tar.gz');
 
-function BaseCacheManager (cacheDirectory) {
+
+function CacheDependencyManager (cacheDirectory) {
   this.cacheDirectory = cacheDirectory;
 }
 
@@ -14,35 +15,35 @@ var getFileHash = function (filePath) {
   return md5(file);
 };
 
-BaseCacheManager.prototype.getName = function () {
-  return 'BaseCacheManager';
+CacheDependencyManager.prototype.getName = function () {
+  return 'CacheDependencyManager';
 };
 
-BaseCacheManager.prototype.getCliName = function () {
+CacheDependencyManager.prototype.getCliName = function () {
   logger.logError('Override getCliName() in subclasses!');
 };
 
-BaseCacheManager.prototype.getConfigPath = function () {
+CacheDependencyManager.prototype.getConfigPath = function () {
   logger.logError('Override getConfigPath() in subclasses!');
 };
 
-BaseCacheManager.prototype.getInstalledDirectory = function () {
+CacheDependencyManager.prototype.getInstalledDirectory = function () {
   logger.logError('Override getInstalledDirectory() in subclasses!');
 };
 
-BaseCacheManager.prototype.cacheLogInfo = function (message) {
+CacheDependencyManager.prototype.cacheLogInfo = function (message) {
   logger.logInfo('[' + this.getName() + '] ' + message);
 };
 
-BaseCacheManager.prototype.cacheLogError = function (error) {
+CacheDependencyManager.prototype.cacheLogError = function (error) {
   logger.logError('[' + this.getName() + '] ' + error);
 };
 
-BaseCacheManager.prototype.installDependencies = function () {
+CacheDependencyManager.prototype.installDependencies = function () {
   logger.logError('Override installDependencies() in subclasses!');
 };
 
-BaseCacheManager.prototype.archiveDependencies = function (cachePath, onFinish) {
+CacheDependencyManager.prototype.archiveDependencies = function (cachePath, onFinish) {
   var self = this;
   var installedDirectory = path.resolve(process.cwd(), this.getInstalledDirectory());
   new targz().compress(installedDirectory, cachePath,
@@ -56,7 +57,7 @@ BaseCacheManager.prototype.archiveDependencies = function (cachePath, onFinish) 
   );
 };
 
-BaseCacheManager.prototype.extractDependencies = function (cachePath, onFinish) {
+CacheDependencyManager.prototype.extractDependencies = function (cachePath, onFinish) {
   var self = this;
   new targz().extract(cachePath, process.cwd(),
     function (err) {
@@ -68,7 +69,7 @@ BaseCacheManager.prototype.extractDependencies = function (cachePath, onFinish) 
     });
 };
 
-BaseCacheManager.prototype.loadDependencies = function () {
+CacheDependencyManager.prototype.loadDependencies = function () {
   var self = this;
 
   // Check if config file for dependency manager exists
@@ -106,4 +107,4 @@ BaseCacheManager.prototype.loadDependencies = function () {
   }
 };
 
-module.exports = BaseCacheManager;
+module.exports = CacheDependencyManager;
