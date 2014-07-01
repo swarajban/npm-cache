@@ -5,6 +5,7 @@ var logger = require('./util/logger');
 var path = require('path');
 var NpmCacheDependencyManager = require('./cacheDependencyManagers/npmCacheDependencyManager');
 var BowerCacheDependencyManager = require('./cacheDependencyManagers/bowerCacheDependencyManager');
+var ComposerCacheDependencyManager = require('./cacheDependencyManagers/composerCacheDependencyManager');
 
 
 var init = function () {
@@ -17,6 +18,7 @@ var init = function () {
   var cacheManagers = [];
   cacheManagers.push(new NpmCacheDependencyManager(cacheDirectory));
   cacheManagers.push(new BowerCacheDependencyManager(cacheDirectory));
+  cacheManagers.push(new ComposerCacheDependencyManager(cacheDirectory));
 
   _.forEach(cacheManagers, function (cacheManager) {
     cacheManager.loadDependencies();
