@@ -60,7 +60,7 @@ CacheDependencyManager.prototype.loadDependencies = function () {
 
   // Check if config file for dependency manager exists
   if (! fs.existsSync(this.getConfigPath())) {
-    this.cacheLogInfo('Dependency config file ' + this.getConfigPath() + ' does not exist. Skipping npm install');
+    this.cacheLogInfo('Dependency config file ' + this.getConfigPath() + ' does not exist. Skipping install');
     return;
   }
   this.cacheLogInfo('config file exists');
