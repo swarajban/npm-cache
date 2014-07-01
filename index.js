@@ -15,15 +15,58 @@ var init = function () {
     return;
   }
 
-  var cacheDirectory = path.resolve(util.getHomeDirectory(), '.package_cache');
-  var cacheManagers = [];
-  cacheManagers.push(new NpmCacheDependencyManager(cacheDirectory));
-  cacheManagers.push(new BowerCacheDependencyManager(cacheDirectory));
-  cacheManagers.push(new ComposerCacheDependencyManager(cacheDirectory));
+  // Parse command line options
+  var yargs = require('yargs')
+    .usage('Usage: $0 install')
+    .example('$0 install', 'try to install npm, bower, and composer components')
+    .example('$0 install bower', 'install only bower components')
+    .example('$0 install bower npm', 'install bower and npm components')
+    .example('$0 install --cachedDirectory /Users/cached/', 'try to install npm, bower, and composer components, using /Users/cached/ as cached directory')
+    .alias('h', 'help')
+    .string('cachedDirectory');
+  var argv = yargs.argv;
 
-  cacheManagers.forEach( function (cacheManager) {
-    cacheManager.loadDependencies();
+  var shouldInstall = argv._.indexOf('install') !== -1;
+
+  // Show help message if help flag specified
+  // or install not specified
+  if (argv.help || ! shouldInstall) {
+    console.log(yargs.help());
+    return;
+  }
+
+  // Use ~/.package_cache as default cacheDirectory, or use user-specified directory
+  var cacheDirectory = argv.cachedDirectory || path.resolve(util.getHomeDirectory(), '.package_cache');
+  logger.logInfo('using ' + cacheDirectory + ' as cache directory');
+
+  // Parse args for which dependency managers to install
+  var specifiedManagers;
+  if (argv._.length === 1) {
+    specifiedManagers = defaultManagers;
+  } else {
+    specifiedManagers = argv._;
+  }
+
+  var dependencyManagers = [];
+  specifiedManagers.forEach(function (dependencyManager) {
+    if (availableManagers[dependencyManager]) {
+      dependencyManagers.push(new availableManagers[dependencyManager](cacheDirectory));
+      logger.logInfo('will install ' + dependencyManager);
+    }
+  });
+
+  // load dependencies for specified managers
+  dependencyManagers.forEach(function (dependencyManager) {
+    dependencyManager.loadDependencies();
   });
 };
+
+var availableManagers = {
+  npm: NpmCacheDependencyManager,
+  bower: BowerCacheDependencyManager,
+  composer: ComposerCacheDependencyManager
+};
+
+var defaultManagers = ['npm', 'bower', 'composer'];
 
 init();
