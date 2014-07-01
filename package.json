@@ -16,7 +16,6 @@
     "local"
   ],
   "author": "swaraj",
-  "private": true,
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/swarajban/npm-cache/issues"
@@ -25,5 +24,9 @@
   "dependencies": {
     "MD5": "^1.2.1",
     "shelljs": "^0.3.0"
+  },
+  "preferGlobal": true,
+  "bin": {
+    "npm-cache": "index.js"
   }
 }

@@ -1,3 +1,5 @@
+#! /usr/bin/env node
+
 var shell = require('shelljs');
 var util = require('./util/util');
 var logger = require('./util/logger');
