@@ -3,7 +3,6 @@ var path = require('path');
 var logger = require('../util/logger');
 var md5 = require('MD5');
 var shell = require('shelljs');
-var targz = require('tar.gz');
 
 
 function CacheDependencyManager (cacheDirectory) {

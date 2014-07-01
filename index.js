@@ -1,4 +1,3 @@
-var _ = require('lodash');
 var shell = require('shelljs');
 var util = require('./util/util');
 var logger = require('./util/logger');
@@ -20,7 +19,7 @@ var init = function () {
   cacheManagers.push(new BowerCacheDependencyManager(cacheDirectory));
   cacheManagers.push(new ComposerCacheDependencyManager(cacheDirectory));
 
-  _.forEach(cacheManagers, function (cacheManager) {
+  cacheManagers.forEach( function (cacheManager) {
     cacheManager.loadDependencies();
   });
 };
