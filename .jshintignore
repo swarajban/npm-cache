@@ -1,0 +1,7 @@
+node_modules/
+tmp/
+.idea/
+LICENSE
+*.md
+*.iml
+package.json
