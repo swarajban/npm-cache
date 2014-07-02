@@ -1,5 +1,6 @@
 #! /usr/bin/env node
 
+var fs = require('fs');
 var shell = require('shelljs');
 var util = require('./util/util');
 var logger = require('./util/logger');
@@ -38,7 +39,13 @@ var init = function () {
   // Use ~/.package_cache as default cacheDirectory, or use user-specified directory
   var cacheDirectory = argv.cachedDirectory || path.resolve(util.getHomeDirectory(), '.package_cache');
   logger.logInfo('using ' + cacheDirectory + ' as cache directory');
+  if (! fs.existsSync(cacheDirectory)) {
+    // create directory if it doesn't exist
+    shell.mkdir('-p', cacheDirectory);
+    logger.logInfo('creating cache directory');
+  }
 
+  
   // Parse args for which dependency managers to install
   var specifiedManagers;
   if (argv._.length === 1) {
