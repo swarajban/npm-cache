@@ -1,3 +1,5 @@
+'use strict';
+
 var CacheDependencyManager = require('./baseCacheDependencyManager');
 var path = require('path');
 var shell = require('shelljs');

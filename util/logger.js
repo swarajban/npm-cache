@@ -1,3 +1,4 @@
+'use strict';
 
 exports.logError = function (errorMessage) {
   console.log('[npm-cache] [ERROR] ' + errorMessage);

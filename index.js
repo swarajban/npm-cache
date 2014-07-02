@@ -1,4 +1,5 @@
 #! /usr/bin/env node
+'use strict';
 
 var fs = require('fs');
 var shell = require('shelljs');
@@ -9,6 +10,13 @@ var NpmCacheDependencyManager = require('./cacheDependencyManagers/npmCacheDepen
 var BowerCacheDependencyManager = require('./cacheDependencyManagers/bowerCacheDependencyManager');
 var ComposerCacheDependencyManager = require('./cacheDependencyManagers/composerCacheDependencyManager');
 
+var availableManagers = {
+  npm: NpmCacheDependencyManager,
+  bower: BowerCacheDependencyManager,
+  composer: ComposerCacheDependencyManager
+};
+
+var defaultManagers = ['npm', 'bower', 'composer'];
 
 var init = function () {
   if (! shell.which('tar')) {
@@ -67,13 +75,5 @@ var init = function () {
     dependencyManager.loadDependencies();
   });
 };
-
-var availableManagers = {
-  npm: NpmCacheDependencyManager,
-  bower: BowerCacheDependencyManager,
-  composer: ComposerCacheDependencyManager
-};
-
-var defaultManagers = ['npm', 'bower', 'composer'];
 
 init();
