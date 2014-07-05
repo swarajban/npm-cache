@@ -6,7 +6,6 @@ var path = require('path');
 var shell = require('shelljs');
 var parser = require('nomnom');
 
-var util = require('./util/util');
 var logger = require('./util/logger');
 
 if (! shell.which('tar')) {
@@ -51,11 +50,10 @@ var installDependencies = function (opts) {
 };
 
 
-
 parser.command('install')
   .callback(installDependencies)
   .option('cacheDirectory', {
-    default: path.resolve(util.getHomeDirectory(), '.package_cache'),
+    default: path.resolve(process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE, '.package_cache'),
     abbr: 'c',
     help: 'directory where dependencies will be cached'
   })
