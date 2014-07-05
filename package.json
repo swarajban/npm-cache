@@ -23,8 +23,8 @@
   "homepage": "https://github.com/swarajban/npm-cache",
   "dependencies": {
     "MD5": "^1.2.1",
-    "shelljs": "^0.3.0",
-    "yargs": "^1.2.6"
+    "nomnom": "^1.8.0",
+    "shelljs": "^0.3.0"
   },
   "preferGlobal": true,
   "bin": {
