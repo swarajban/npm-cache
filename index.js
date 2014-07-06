@@ -9,7 +9,7 @@ var async = require('async');
 var glob = require('glob');
 
 var logger = require('./util/logger');
-var CacheDependencyManager = require('./cacheDependencyManagers/baseCacheDependencyManager');
+var CacheDependencyManager = require('./cacheDependencyManagers/cacheDependencyManager');
 
 if (! shell.which('tar')) {
   logger.logError('tar command-line tool not found. exiting...');
