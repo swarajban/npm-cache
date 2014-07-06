@@ -6,6 +6,7 @@ var path = require('path');
 var shell = require('shelljs');
 var parser = require('nomnom');
 var async = require('async');
+var glob = require('glob');
 
 var logger = require('./util/logger');
 var CacheDependencyManager = require('./cacheDependencyManagers/baseCacheDependencyManager');
@@ -15,16 +16,21 @@ if (! shell.which('tar')) {
   return;
 }
 
+// Creates cache directory if it does not exist yet
+var prepareCacheDirectory = function (cacheDirectory) {
+  logger.logInfo('using ' + cacheDirectory + ' as cache directory');
+  if (! fs.existsSync(cacheDirectory)) {
+    // create directory if it doesn't exist
+    shell.mkdir('-p', cacheDirectory);
+    logger.logInfo('creating cache directory');
+  }
+};
+
 // npm-cache command handlers
 
 // main method for installing specified dependencies
 var installDependencies = function (opts) {
-  logger.logInfo('using ' + opts.cacheDirectory + ' as cache directory');
-  if (! fs.existsSync(opts.cacheDirectory)) {
-    // create directory if it doesn't exist
-    shell.mkdir('-p', opts.cacheDirectory);
-    logger.logInfo('creating cache directory');
-  }
+  prepareCacheDirectory(opts.cacheDirectory);
 
   var availableManagers = {
     npm: './cacheDependencyManagers/npmConfig.js',
@@ -68,15 +74,37 @@ var installDependencies = function (opts) {
   );
 };
 
+// Removes all cached dependencies from cache directory
+var cleanCache = function (opts) {
+  prepareCacheDirectory(opts.cacheDirectory);
+  var md5Regexp = /\/[0-9a-f\D]{32}\.tar\.gz/i;
+  var isCachedFile = function (fileName) {
+    return md5Regexp.test(fileName);
+  };
+  var candidateFileNames = glob.sync(opts.cacheDirectory + '/*.tar.gz');
+  var cachedFiles = candidateFileNames.filter(isCachedFile);
+  cachedFiles.forEach(function (fileName) {
+    fs.unlinkSync(fileName);
+  });
+  logger.logInfo('cleaned ' + cachedFiles.length + ' files from cache directory');
+};
+
+
+// Parse CLI Args
 
 parser.command('install')
   .callback(installDependencies)
-  .option('cacheDirectory', {
-    default: path.resolve(process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE, '.package_cache'),
-    abbr: 'c',
-    help: 'directory where dependencies will be cached'
-  })
   .help('install specified dependencies');
+
+parser.command('clean')
+  .callback(cleanCache)
+  .help('clear cache directory');
+
+parser.option('cacheDirectory', {
+  default: path.resolve(process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE, '.package_cache'),
+  abbr: 'c',
+  help: 'directory where dependencies will be cached'
+});
 
 
 var examples = [
@@ -84,7 +112,8 @@ var examples = [
   '\tnpm-cache install\t# try to install npm, bower, and composer components',
   '\tnpm-cache install bower\t# install only bower components',
   '\tnpm-cache install bower npm\t# install bower and npm components',
-  '\tnpm-cache install bower --cacheDirectory /home/cache/\t# install bower components using /home/cache as cache directory'
+  '\tnpm-cache install bower --cacheDirectory /home/cache/\t# install bower components using /home/cache as cache directory',
+  '\tnpm-cache clean\t cleans out all cached files in cache directory'
 ];
 
 parser.help(examples.join('\n'));
