@@ -114,6 +114,18 @@ parser.option('cacheDirectory', {
   help: 'directory where dependencies will be cached'
 });
 
+parser.option('version', {
+  abbr: 'v',
+  help: 'displays version info and exit',
+  flag: true,
+  callback: function () {
+    var packagePath = path.resolve(__dirname, 'package.json');
+    var packageFile = fs.readFileSync(packagePath);
+    var packageParsed = JSON.parse(packageFile);
+    return packageParsed.version;
+  }
+});
+
 
 var examples = [
   'Examples:',
