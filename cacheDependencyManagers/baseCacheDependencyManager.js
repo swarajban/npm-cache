@@ -48,12 +48,14 @@ CacheDependencyManager.prototype.extractDependencies = function (cachePath) {
   this.cacheLogInfo('done extracting');
 };
 
-CacheDependencyManager.prototype.loadDependencies = function (cacheDirectory) {
+CacheDependencyManager.prototype.loadDependencies = function (cacheDirectory, callback) {
   var self = this;
+  var error;
 
   // Check if config file for dependency manager exists
   if (! fs.existsSync(this.config.configPath)) {
     this.cacheLogInfo('Dependency config file ' + this.config.configPath + ' does not exist. Skipping install');
+    callback(null);
     return;
   }
   this.cacheLogInfo('config file exists');
@@ -70,13 +72,16 @@ CacheDependencyManager.prototype.loadDependencies = function (cacheDirectory) {
     this.extractDependencies(cachePath);
   } else { // install dependencies with CLI tool and cache
     if (! shell.which(this.config.cliName)) {
-      this.cacheLogError('Command line tool ' + this.config.cliName + ' not installed');
+      error = 'Command line tool ' + this.config.cliName + ' not installed';
+      this.cacheLogError(error);
+      callback(error);
       return;
     }
     this.installDependencies();
     this.archiveDependencies(cachePath);
     self.cacheLogInfo('installed and archived dependencies');
   }
+  callback(null);
 };
 
 module.exports = CacheDependencyManager;

@@ -5,8 +5,10 @@ var fs = require('fs');
 var path = require('path');
 var shell = require('shelljs');
 var parser = require('nomnom');
+var async = require('async');
 
 var logger = require('./util/logger');
+var CacheDependencyManager = require('./cacheDependencyManagers/baseCacheDependencyManager');
 
 if (! shell.which('tar')) {
   logger.logError('tar command-line tool not found. exiting...');
@@ -38,15 +40,32 @@ var installDependencies = function (opts) {
   } else {
     specifiedManagers = opts._;
   }
-  var CacheDependencyManager = require('./cacheDependencyManagers/baseCacheDependencyManager');
+
+  var loadTasks = [];
   specifiedManagers.forEach(function (dependencyManagerName) {
     if (dependencyManagerName in availableManagers) {
       logger.logInfo('installing ' + dependencyManagerName + ' dependencies');
       var config = require(availableManagers[dependencyManagerName]);
       var manager = new CacheDependencyManager(config);
-      manager.loadDependencies(opts.cacheDirectory);
+      loadTasks.push(
+        function (callback) {
+          manager.loadDependencies(opts.cacheDirectory, callback);
+        }
+      );
     }
   });
+
+  async.parallel(loadTasks,
+    function onInstalled (error) {
+      if (error === undefined) {
+        logger.logInfo('successfully installed all dependencies');
+        process.exit(0);
+      } else {
+        logger.logError('error installing dependencies');
+        process.exit(1);
+      }
+    }
+  );
 };
 
 
