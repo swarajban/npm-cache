@@ -48,7 +48,8 @@ CacheDependencyManager.prototype.extractDependencies = function (cachePath) {
   this.cacheLogInfo('done extracting');
 };
 
-CacheDependencyManager.prototype.loadDependencies = function (cacheDirectory, callback) {
+
+CacheDependencyManager.prototype.loadDependencies = function (callback) {
   var self = this;
   var error;
 
@@ -64,10 +65,10 @@ CacheDependencyManager.prototype.loadDependencies = function (cacheDirectory, ca
   var hash = getFileHash(this.config.configPath);
   this.cacheLogInfo('hash of ' + this.config.configPath + ': ' + hash);
   // cachePath is absolute path to where local cache of dependencies is located
-  var cachePath = path.resolve(cacheDirectory, hash + '.tar.gz');
+  var cachePath = path.resolve(this.config.cacheDirectory, hash + '.tar.gz');
 
   // Check if local cache of dependencies exists
-  if (fs.existsSync(cachePath)) {
+  if (! this.config.forceRefresh && fs.existsSync(cachePath)) {
     this.cacheLogInfo('cache exists');
     this.extractDependencies(cachePath);
   } else { // install dependencies with CLI tool and cache

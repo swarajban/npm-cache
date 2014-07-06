@@ -52,10 +52,12 @@ var installDependencies = function (opts) {
     if (dependencyManagerName in availableManagers) {
       logger.logInfo('installing ' + dependencyManagerName + ' dependencies');
       var config = require(availableManagers[dependencyManagerName]);
+      config.cacheDirectory = opts.cacheDirectory;
+      config.forceRefresh = opts.forceRefresh;
       var manager = new CacheDependencyManager(config);
       loadTasks.push(
         function (callback) {
-          manager.loadDependencies(opts.cacheDirectory, callback);
+          manager.loadDependencies(callback);
         }
       );
     }
@@ -94,6 +96,12 @@ var cleanCache = function (opts) {
 
 parser.command('install')
   .callback(installDependencies)
+  .option('forceRefresh', {
+    abbr: 'r',
+    flag: true,
+    default: false,
+    help: 'force installing dependencies from package manager without cache'
+  })
   .help('install specified dependencies');
 
 parser.command('clean')
