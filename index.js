@@ -120,8 +120,9 @@ var examples = [
   '\tnpm-cache install\t# try to install npm, bower, and composer components',
   '\tnpm-cache install bower\t# install only bower components',
   '\tnpm-cache install bower npm\t# install bower and npm components',
-  '\tnpm-cache install bower --cacheDirectory /home/cache/\t# install bower components using /home/cache as cache directory',
-  '\tnpm-cache clean\t cleans out all cached files in cache directory'
+  '\tnpm-cache install bower --cacheDirectory /home/cache/\t# install components using /home/cache as cache directory',
+  '\tnpm-cache install bower --forceRefresh\t# force installing dependencies from package manager without cache',
+  '\tnpm-cache clean\t# cleans out all cached files in cache directory'
 ];
 
 parser.help(examples.join('\n'));
