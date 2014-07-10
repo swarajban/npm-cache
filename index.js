@@ -111,7 +111,7 @@ var installDependencies = function (opts) {
 // Removes all cached dependencies from cache directory
 var cleanCache = function (opts) {
   prepareCacheDirectory(opts.cacheDirectory);
-  var md5Regexp = /\/[0-9a-f\D]{32}\.tar\.gz/i;
+  var md5Regexp = /\/[0-9a-f]{32}\.tar\.gz/i;
   var isCachedFile = function (fileName) {
     return md5Regexp.test(fileName);
   };
