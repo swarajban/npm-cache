@@ -47,7 +47,7 @@ var installDependencies = function (opts) {
     specifiedManagers = opts._;
   }
 
-  var loadTasks = [];
+  var managers = [];
   specifiedManagers.forEach(function (dependencyManagerName) {
     if (dependencyManagerName in availableManagers) {
       logger.logInfo('installing ' + dependencyManagerName + ' dependencies');
@@ -55,15 +55,15 @@ var installDependencies = function (opts) {
       config.cacheDirectory = opts.cacheDirectory;
       config.forceRefresh = opts.forceRefresh;
       var manager = new CacheDependencyManager(config);
-      loadTasks.push(
-        function (callback) {
-          manager.loadDependencies(callback);
-        }
-      );
+      managers.push(manager);
     }
   });
 
-  async.parallel(loadTasks,
+  async.each(
+    managers,
+    function startManager (manager, callback) {
+      manager.loadDependencies(callback);
+    },
     function onInstalled (error) {
       if (error === undefined) {
         logger.logInfo('successfully installed all dependencies');
