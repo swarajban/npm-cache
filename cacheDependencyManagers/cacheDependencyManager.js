@@ -26,12 +26,15 @@ CacheDependencyManager.prototype.cacheLogError = function (error) {
 
 
 CacheDependencyManager.prototype.installDependencies = function () {
+  var error = null;
   this.cacheLogInfo('installing ' + this.config.cliName + ' dependencies...');
   if (shell.exec(this.config.installCommand).code !== 0) {
-    this.cacheLogError('error running ' + this.config.installCommand);
-    return;
+    error = 'error running ' + this.config.installCommand;
+    this.cacheLogError(error);
+  } else {
+    this.cacheLogInfo('installed ' + this.config.cliName + ' dependencies, now archiving');
   }
-  this.cacheLogInfo('installed ' + this.config.cliName + ' dependencies, now archiving');
+  return error;
 };
 
 
@@ -51,7 +54,7 @@ CacheDependencyManager.prototype.extractDependencies = function (cachePath) {
 
 CacheDependencyManager.prototype.loadDependencies = function (callback) {
   var self = this;
-  var error;
+  var error = null;
 
   // Check if config file for dependency manager exists
   if (! fs.existsSync(this.config.configPath)) {
@@ -78,11 +81,15 @@ CacheDependencyManager.prototype.loadDependencies = function (callback) {
       callback(error);
       return;
     }
-    this.installDependencies();
+    error = this.installDependencies();
+    if (error !== null) {
+      callback(error);
+      return;
+    }
     this.archiveDependencies(cachePath);
     self.cacheLogInfo('installed and archived dependencies');
   }
-  callback(null);
+  callback(error);
 };
 
 module.exports = CacheDependencyManager;

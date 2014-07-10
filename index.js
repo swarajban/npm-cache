@@ -47,23 +47,55 @@ var installDependencies = function (opts) {
     specifiedManagers = opts._;
   }
 
-  var managers = [];
-  specifiedManagers.forEach(function (dependencyManagerName) {
-    if (dependencyManagerName in availableManagers) {
-      logger.logInfo('installing ' + dependencyManagerName + ' dependencies');
-      var config = require(availableManagers[dependencyManagerName]);
-      config.cacheDirectory = opts.cacheDirectory;
-      config.forceRefresh = opts.forceRefresh;
-      var manager = new CacheDependencyManager(config);
-      managers.push(manager);
-    }
-  });
-
-  async.each(
-    managers,
-    function startManager (manager, callback) {
-      manager.loadDependencies(callback);
-    },
+  async.waterfall(
+    [
+      // filter specified managers to include only
+      // managers in available managers
+      function filterManagers (callback) {
+        async.filter(
+          specifiedManagers,
+          function isValidManager (managerName, callback) {
+            var isValid = managerName in availableManagers;
+            callback(isValid);
+          },
+          function onFiltered (filtered) {
+            callback(null, filtered);
+          }
+        );
+      },
+      // instantiate new CacheDependencyManager for each
+      // valid specified manager with appropritate config
+      function initManagers (managerNames, callback) {
+        // create manager objects and return array
+        async.map(
+          managerNames,
+          function initManager (managerName, callback) {
+            var managerConfig = require(availableManagers[managerName]);
+            managerConfig.cacheDirectory = opts.cacheDirectory;
+            managerConfig.forceRefresh = opts.forceRefresh;
+            var manager = new CacheDependencyManager(managerConfig);
+            callback(null, manager);
+          },
+          function onMapped (error, managers) {
+            callback(null, managers);
+          }
+        );
+      },
+      // kick off each manager asynchronously
+      function startManagers (managers, callback) {
+        async.each(
+          managers,
+          function startManager (manager, callback) {
+            logger.logInfo('installing ' + manager.config.cliName + ' dependencies');
+            manager.loadDependencies(callback);
+          },
+          function onManagersFinished (err) {
+            callback(err);
+          }
+        );
+      }
+    ],
+    // called once all managers have finished (or an error occurred)
     function onInstalled (error) {
       if (error === undefined) {
         logger.logInfo('successfully installed all dependencies');
