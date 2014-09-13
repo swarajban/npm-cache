@@ -41,3 +41,4 @@ npm-cache clean	# cleans out all cached files in cache directory
 
 
 
+[![Analytics](https://ga-beacon.appspot.com/UA-8932221-3/swarajban/npm-cache)](https://github.com/swarajban/npm-cache)
