@@ -45,7 +45,8 @@ var main = function () {
       var packagePath = path.resolve(__dirname, 'package.json');
       var packageFile = fs.readFileSync(packagePath);
       var packageParsed = JSON.parse(packageFile);
-      return packageParsed.version;
+      console.log(packageParsed.version);
+      process.exit(0);
     }
   });
 
