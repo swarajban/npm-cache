@@ -12,10 +12,67 @@ var logger = require('./util/logger');
 var ParseUtils = require('./util/parseUtils');
 var CacheDependencyManager = require('./cacheDependencyManagers/cacheDependencyManager');
 
-if (! shell.which('tar')) {
-  logger.logError('tar command-line tool not found. exiting...');
-  return;
-}
+// Main entry point for npm-cache
+var main = function () {
+  checkTarExists();
+
+  // Parse CLI Args
+  parser.command('install')
+    .callback(installDependencies)
+    .option('forceRefresh', {
+      abbr: 'r',
+      flag: true,
+      default: false,
+      help: 'force installing dependencies from package manager without cache'
+    })
+    .help('install specified dependencies');
+
+  parser.command('clean')
+    .callback(cleanCache)
+    .help('clear cache directory');
+
+  parser.option('cacheDirectory', {
+    default: path.resolve(process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE, '.package_cache'),
+    abbr: 'c',
+    help: 'directory where dependencies will be cached'
+  });
+
+  parser.option('version', {
+    abbr: 'v',
+    help: 'displays version info and exit',
+    flag: true,
+    callback: function () {
+      var packagePath = path.resolve(__dirname, 'package.json');
+      var packageFile = fs.readFileSync(packagePath);
+      var packageParsed = JSON.parse(packageFile);
+      return packageParsed.version;
+    }
+  });
+
+
+  var examples = [
+    'Examples:',
+    '\tnpm-cache install\t# try to install npm, bower, and composer components',
+    '\tnpm-cache install bower\t# install only bower components',
+    '\tnpm-cache install bower npm\t# install bower and npm components',
+    '\tnpm-cache install bower --allow-root composer --dry-run\t# install bower with allow-root, and composer with --dry-run',
+    '\tnpm-cache --cacheDirectory /home/cache/ install bower \t# install components using /home/cache as cache directory',
+    '\tnpm-cache --forceRefresh install bower\t# force installing dependencies from package manager without cache',
+    '\tnpm-cache clean\t# cleans out all cached files in cache directory'
+  ];
+  parser.help(examples.join('\n'));
+
+  var npmCacheArgs = ParseUtils.getNpmCacheArgs();
+  parser.parse(npmCacheArgs);
+};
+
+// Verify system 'tar' command, exit if if it doesn't exist
+var checkTarExists = function () {
+  if (! shell.which('tar')) {
+    logger.logError('tar command-line tool not found. exiting...');
+    process.exit(1);
+  }
+};
 
 // Creates cache directory if it does not exist yet
 var prepareCacheDirectory = function (cacheDirectory) {
@@ -75,53 +132,4 @@ var cleanCache = function (opts) {
 };
 
 
-// Parse CLI Args
-
-parser.command('install')
-  .callback(installDependencies)
-  .option('forceRefresh', {
-    abbr: 'r',
-    flag: true,
-    default: false,
-    help: 'force installing dependencies from package manager without cache'
-  })
-  .help('install specified dependencies');
-
-parser.command('clean')
-  .callback(cleanCache)
-  .help('clear cache directory');
-
-parser.option('cacheDirectory', {
-  default: path.resolve(process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE, '.package_cache'),
-  abbr: 'c',
-  help: 'directory where dependencies will be cached'
-});
-
-parser.option('version', {
-  abbr: 'v',
-  help: 'displays version info and exit',
-  flag: true,
-  callback: function () {
-    var packagePath = path.resolve(__dirname, 'package.json');
-    var packageFile = fs.readFileSync(packagePath);
-    var packageParsed = JSON.parse(packageFile);
-    return packageParsed.version;
-  }
-});
-
-
-var examples = [
-  'Examples:',
-  '\tnpm-cache install\t# try to install npm, bower, and composer components',
-  '\tnpm-cache install bower\t# install only bower components',
-  '\tnpm-cache install bower npm\t# install bower and npm components',
-  '\tnpm-cache install bower --allow-root composer --dry-run\t# install bower with allow-root, and composer with --dry-run',
-  '\tnpm-cache --cacheDirectory /home/cache/ install bower \t# install components using /home/cache as cache directory',
-  '\tnpm-cache --forceRefresh install bower\t# force installing dependencies from package manager without cache',
-  '\tnpm-cache clean\t# cleans out all cached files in cache directory'
-];
-
-parser.help(examples.join('\n'));
-
-var npmCacheArgs = ParseUtils.getNpmCacheArgs();
-parser.parse(npmCacheArgs);
+main();
