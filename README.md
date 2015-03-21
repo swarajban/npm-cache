@@ -29,13 +29,21 @@ npm install -g npm-cache
 npm-cache install
 ```
 
+To specify arguments to each dependency manager, add the arguments after listing the dependency manager. 
+
+For example, to install bower components with the `--allow-root` option, and composer with the `--dry-run` option:
+```
+npm-cache install bower --allow-root composer --dry-run
+```
+
 ## Examples
 ```bash
 npm-cache install	# try to install npm, bower, and composer components
 npm-cache install bower	# install only bower components
 npm-cache install bower npm	# install bower and npm components
-npm-cache install bower --cacheDirectory /home/cache/	# install components using /home/cache as cache directory
-npm-cache install bower --forceRefresh	# force installing dependencies from package manager without cache
+npm-cache install bower --allow-root composer --dry-run	# install bower with allow-root, and composer with --dry-run
+npm-cache --cacheDirectory /home/cache/ install bower 	# install components using /home/cache as cache directory
+npm-cache --forceRefresh install bower	# force installing dependencies from package manager without cache
 npm-cache clean	# cleans out all cached files in cache directory
 ```
 

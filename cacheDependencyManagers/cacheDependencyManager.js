@@ -27,8 +27,10 @@ CacheDependencyManager.prototype.cacheLogError = function (error) {
 
 CacheDependencyManager.prototype.installDependencies = function () {
   var error = null;
-  this.cacheLogInfo('installing ' + this.config.cliName + ' dependencies...');
-  if (shell.exec(this.config.installCommand).code !== 0) {
+  var installCommand = this.config.installCommand + ' ' + this.config.installOptions;
+  installCommand = installCommand.trim();
+  this.cacheLogInfo('running [' + installCommand + ']...');
+  if (shell.exec(installCommand).code !== 0) {
     error = 'error running ' + this.config.installCommand;
     this.cacheLogError(error);
   } else {
@@ -39,16 +41,29 @@ CacheDependencyManager.prototype.installDependencies = function () {
 
 
 CacheDependencyManager.prototype.archiveDependencies = function (cachePath) {
+  var error = null;
   var installedDirectory = this.config.installDirectory;
   this.cacheLogInfo('archiving dependencies from ' + installedDirectory);
-  shell.exec('tar -zcf ' + cachePath + ' ' + installedDirectory);
-  this.cacheLogInfo('done archiving');
+  if (shell.exec('tar -zcf ' + cachePath + ' ' + installedDirectory).code !== 0) {
+    error = 'error tar-ing ' + installedDirectory;
+    this.cacheLogError(error);
+    shell.rm(cachePath);
+  } else {
+    this.cacheLogInfo('done archiving');
+  }
+  return error;
 };
 
 CacheDependencyManager.prototype.extractDependencies = function (cachePath) {
+  var error = null;
   this.cacheLogInfo('extracting dependencies from ' + cachePath);
-  shell.exec('tar -zxf ' + cachePath);
-  this.cacheLogInfo('done extracting');
+  if (shell.exec('tar -zxf ' + cachePath).code !== 0) {
+    error = 'error untar-ing ' + cachePath;
+    this.cacheLogError(error);
+  } else {
+    this.cacheLogInfo('done extracting');
+  }
+  return error;
 };
 
 
@@ -62,6 +77,7 @@ CacheDependencyManager.prototype.loadDependencies = function (callback) {
     callback(null);
     return;
   }
+
   this.cacheLogInfo('config file exists');
 
   // Get hash of dependency config file
@@ -73,23 +89,74 @@ CacheDependencyManager.prototype.loadDependencies = function (callback) {
   // Check if local cache of dependencies exists
   if (! this.config.forceRefresh && fs.existsSync(cachePath)) {
     this.cacheLogInfo('cache exists');
-    this.extractDependencies(cachePath);
+
+    // Try to extract dependencies
+    error = this.extractDependencies(cachePath);
+    if (error !== null) {
+      callback(error);
+      return;
+    }
+    // Success!
+
   } else { // install dependencies with CLI tool and cache
+
+    // Check if package manger CLI is installed
     if (! shell.which(this.config.cliName)) {
       error = 'Command line tool ' + this.config.cliName + ' not installed';
       this.cacheLogError(error);
       callback(error);
       return;
     }
+
+    // Try to install dependencies using package manager
     error = this.installDependencies();
     if (error !== null) {
       callback(error);
       return;
     }
-    this.archiveDependencies(cachePath);
+
+    // Try to archive newly installed dependencies
+    error = this.archiveDependencies(cachePath);
+    if (error !== null) {
+      callback(error);
+      return;
+    }
+
+    // Success!
     self.cacheLogInfo('installed and archived dependencies');
   }
+
   callback(error);
+};
+
+/**
+ * Looks for available package manager configs in cacheDependencyManagers
+ * directory. Returns an object with package manager names as keys
+ * and absolute paths to configs as values
+ *
+ * Ex: {
+ *  npm: /usr/local/lib/node_modules/npm-cache/cacheDependencyMangers/npmConfig.js,
+ *  bower: /usr/local/lib/node_modules/npm-cache/cacheDependencyMangers/bowerConfig.js
+ * }
+ *
+ * @return {Object} availableManagers
+ */
+CacheDependencyManager.getAvailableManagers = function () {
+  if (CacheDependencyManager.managers === undefined) {
+    CacheDependencyManager.managers = {};
+    var files = fs.readdirSync(__dirname);
+    var managerRegex = /(\S+)Config\.js/;
+    files.forEach(
+      function addAvailableManager (file) {
+        var result = managerRegex.exec(file);
+        if (result !== null) {
+          var managerName = result[1];
+          CacheDependencyManager.managers[managerName] = path.join(__dirname, file);
+        }
+      }
+    );
+  }
+  return CacheDependencyManager.managers;
 };
 
 module.exports = CacheDependencyManager;

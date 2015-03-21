@@ -9,6 +9,7 @@ var async = require('async');
 var glob = require('glob');
 
 var logger = require('./util/logger');
+var ParseUtils = require('./util/parseUtils');
 var CacheDependencyManager = require('./cacheDependencyManagers/cacheDependencyManager');
 
 if (! shell.which('tar')) {
@@ -32,70 +33,20 @@ var prepareCacheDirectory = function (cacheDirectory) {
 var installDependencies = function (opts) {
   prepareCacheDirectory(opts.cacheDirectory);
 
-  var availableManagers = {
-    npm: './cacheDependencyManagers/npmConfig.js',
-    bower: './cacheDependencyManagers/bowerConfig.js',
-    composer: './cacheDependencyManagers/composerConfig.js'
-  };
-  var defaultManagers = Object.keys(availableManagers);
+  var availableManagers = CacheDependencyManager.getAvailableManagers();
+  var managerArguments = ParseUtils.getManagerArgs();
+  var managers = Object.keys(managerArguments);
 
-  // Parse args for which dependency managers to install
-  var specifiedManagers;
-  if (opts._.length === 1) { // no managers specified, install everything!
-    specifiedManagers = defaultManagers;
-  } else {
-    specifiedManagers = opts._;
-  }
-
-  async.waterfall(
-    [
-      // filter specified managers to include only
-      // managers in available managers
-      function filterManagers (callback) {
-        async.filter(
-          specifiedManagers,
-          function isValidManager (managerName, callback) {
-            var isValid = managerName in availableManagers;
-            callback(isValid);
-          },
-          function onFiltered (filtered) {
-            callback(null, filtered);
-          }
-        );
-      },
-      // instantiate new CacheDependencyManager for each
-      // valid specified manager with appropritate config
-      function initManagers (managerNames, callback) {
-        // create manager objects and return array
-        async.map(
-          managerNames,
-          function initManager (managerName, callback) {
-            var managerConfig = require(availableManagers[managerName]);
-            managerConfig.cacheDirectory = opts.cacheDirectory;
-            managerConfig.forceRefresh = opts.forceRefresh;
-            var manager = new CacheDependencyManager(managerConfig);
-            callback(null, manager);
-          },
-          function onMapped (error, managers) {
-            callback(null, managers);
-          }
-        );
-      },
-      // kick off each manager asynchronously
-      function startManagers (managers, callback) {
-        async.each(
-          managers,
-          function startManager (manager, callback) {
-            logger.logInfo('installing ' + manager.config.cliName + ' dependencies');
-            manager.loadDependencies(callback);
-          },
-          function onManagersFinished (err) {
-            callback(err);
-          }
-        );
-      }
-    ],
-    // called once all managers have finished (or an error occurred)
+  async.each(
+    managers,
+    function startManager (managerName, callback) {
+      var managerConfig = require(availableManagers[managerName]);
+      managerConfig.cacheDirectory = opts.cacheDirectory;
+      managerConfig.forceRefresh = opts.forceRefresh;
+      managerConfig.installOptions = managerArguments[managerName];
+      var manager = new CacheDependencyManager(managerConfig);
+      manager.loadDependencies(callback);
+    },
     function onInstalled (error) {
       if (error === undefined) {
         logger.logInfo('successfully installed all dependencies');
@@ -164,11 +115,13 @@ var examples = [
   '\tnpm-cache install\t# try to install npm, bower, and composer components',
   '\tnpm-cache install bower\t# install only bower components',
   '\tnpm-cache install bower npm\t# install bower and npm components',
-  '\tnpm-cache install bower --cacheDirectory /home/cache/\t# install components using /home/cache as cache directory',
-  '\tnpm-cache install bower --forceRefresh\t# force installing dependencies from package manager without cache',
+  '\tnpm-cache install bower --allow-root composer --dry-run\t# install bower with allow-root, and composer with --dry-run',
+  '\tnpm-cache --cacheDirectory /home/cache/ install bower \t# install components using /home/cache as cache directory',
+  '\tnpm-cache --forceRefresh install bower\t# force installing dependencies from package manager without cache',
   '\tnpm-cache clean\t# cleans out all cached files in cache directory'
 ];
 
 parser.help(examples.join('\n'));
 
-parser.parse();
+var npmCacheArgs = ParseUtils.getNpmCacheArgs();
+parser.parse(npmCacheArgs);
