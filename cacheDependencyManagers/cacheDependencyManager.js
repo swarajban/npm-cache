@@ -55,7 +55,7 @@ CacheDependencyManager.prototype.archiveDependencies = function (cacheDirectory,
   shell.mkdir('-p', cacheDirectory);
 
   // Now archive installed directory
-  if (shell.exec('tar -zcf ' + cachePath + ' ' + installedDirectory).code !== 0) {
+  if (shell.exec('tar -zcf ' + cachePath + ' -C ' + installedDirectory + ' .').code !== 0) {
     error = 'error tar-ing ' + installedDirectory;
     this.cacheLogError(error);
     shell.rm(cachePath);
@@ -75,8 +75,12 @@ CacheDependencyManager.prototype.extractDependencies = function (cachePath) {
     this.cacheLogError(error);
   } else {
     this.cacheLogInfo('...cleared');
+
+    // Make sure install directory is created
+    shell.mkdir('-p', installedDirectory);
+
     this.cacheLogInfo('extracting dependencies from ' + cachePath);
-    var tarExtractCode = shell.exec('tar -zxf ' + cachePath).code;
+    var tarExtractCode = shell.exec('tar -zxf ' + cachePath + ' -C ' + installedDirectory).code;
     if (tarExtractCode !== 0) {
       error = 'error untar-ing ' + cachePath;
       this.cacheLogError(error);
