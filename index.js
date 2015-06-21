@@ -33,6 +33,9 @@ var main = function () {
 
   parser.option('cacheDirectory', {
     default: path.resolve(process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE, '.package_cache'),
+    transform: function getVersionedCacheDirectory (dirName) {
+      return path.resolve(dirName, process.version); // namespace cache by node version #
+    },
     abbr: 'c',
     help: 'directory where dependencies will be cached'
   });
