@@ -46,10 +46,15 @@ CacheDependencyManager.prototype.installDependencies = function () {
 };
 
 
-CacheDependencyManager.prototype.archiveDependencies = function (cachePath) {
+CacheDependencyManager.prototype.archiveDependencies = function (cacheDirectory, cachePath) {
   var error = null;
   var installedDirectory = getAbsolutePath(this.config.installDirectory);
   this.cacheLogInfo('archiving dependencies from ' + installedDirectory);
+
+  // Make sure cache directory is created
+  shell.mkdir('-p', cacheDirectory);
+
+  // Now archive installed directory
   if (shell.exec('tar -zcf ' + cachePath + ' ' + installedDirectory).code !== 0) {
     error = 'error tar-ing ' + installedDirectory;
     this.cacheLogError(error);
@@ -93,14 +98,24 @@ CacheDependencyManager.prototype.loadDependencies = function (callback) {
     callback(null);
     return;
   }
-
   this.cacheLogInfo('config file exists');
+
+  // Check if package manger CLI is installed
+  if (! shell.which(this.config.cliName)) {
+    error = 'Command line tool ' + this.config.cliName + ' not installed';
+    this.cacheLogError(error);
+    callback(error);
+    return;
+  }
+  this.cacheLogInfo('cli exists');
+
 
   // Get hash of dependency config file
   var hash = getFileHash(this.config.configPath);
   this.cacheLogInfo('hash of ' + this.config.configPath + ': ' + hash);
   // cachePath is absolute path to where local cache of dependencies is located
-  var cachePath = path.resolve(this.config.cacheDirectory, hash + '.tar.gz');
+  var cacheDirectory = path.resolve(this.config.cacheDirectory, this.config.cliName, this.config.getCliVersion());
+  var cachePath = path.resolve(cacheDirectory, hash + '.tar.gz');
 
   // Check if local cache of dependencies exists
   if (! this.config.forceRefresh && fs.existsSync(cachePath)) {
@@ -116,14 +131,6 @@ CacheDependencyManager.prototype.loadDependencies = function (callback) {
 
   } else { // install dependencies with CLI tool and cache
 
-    // Check if package manger CLI is installed
-    if (! shell.which(this.config.cliName)) {
-      error = 'Command line tool ' + this.config.cliName + ' not installed';
-      this.cacheLogError(error);
-      callback(error);
-      return;
-    }
-
     // Try to install dependencies using package manager
     error = this.installDependencies();
     if (error !== null) {
@@ -132,7 +139,7 @@ CacheDependencyManager.prototype.loadDependencies = function (callback) {
     }
 
     // Try to archive newly installed dependencies
-    error = this.archiveDependencies(cachePath);
+    error = this.archiveDependencies(cacheDirectory, cachePath);
     if (error !== null) {
       callback(error);
       return;

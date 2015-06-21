@@ -1,6 +1,7 @@
 'use strict';
 
 var path = require('path');
+var shell = require('shelljs');
 var fs = require('fs');
 var logger = require('../util/logger');
 
@@ -22,6 +23,9 @@ var getNpmConfigPath = function () {
 
 module.exports = {
   cliName: 'npm',
+  getCliVersion: function getNpmVersion () {
+    return shell.exec('npm --version', {silent: true}).output.trim();
+  },
   configPath: getNpmConfigPath(),
   installDirectory: 'node_modules',
   installCommand: 'npm install'

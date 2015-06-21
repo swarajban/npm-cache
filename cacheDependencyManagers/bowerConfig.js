@@ -1,6 +1,7 @@
 'use strict';
 
 var path = require('path');
+var shell = require('shelljs');
 var fs = require('fs');
 var logger = require('../util/logger');
 
@@ -21,6 +22,9 @@ var getBowerInstallDirectory = function () {
 
 module.exports = {
   cliName: 'bower',
+  getCliVersion: function getNpmVersion () {
+    return shell.exec('bower --version', {silent: true}).output.trim();
+  },
   configPath: path.resolve(process.cwd(), 'bower.json'),
   installDirectory: getBowerInstallDirectory(),
   installCommand: 'bower install'

@@ -33,9 +33,6 @@ var main = function () {
 
   parser.option('cacheDirectory', {
     default: path.resolve(process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE, '.package_cache'),
-    transform: function getVersionedCacheDirectory (dirName) {
-      return path.resolve(dirName, process.version); // namespace cache by node version #
-    },
     abbr: 'c',
     help: 'directory where dependencies will be cached'
   });
@@ -123,12 +120,19 @@ var installDependencies = function (opts) {
 // Removes all cached dependencies from cache directory
 var cleanCache = function (opts) {
   prepareCacheDirectory(opts.cacheDirectory);
+
+  // Get all *.tar.gz files recursively in cache directory
+  var candidateFileNames = glob.sync(opts.cacheDirectory + '/**/*.tar.gz');
+
+  // Filter out unlikely npm-cached files (non-md5 file names)
   var md5Regexp = /\/[0-9a-f]{32}\.tar\.gz/i;
-  var isCachedFile = function (fileName) {
-    return md5Regexp.test(fileName);
-  };
-  var candidateFileNames = glob.sync(opts.cacheDirectory + '/*.tar.gz');
-  var cachedFiles = candidateFileNames.filter(isCachedFile);
+  var cachedFiles = candidateFileNames.filter(
+    function isCachedFile (fileName) {
+      return md5Regexp.test(fileName);
+    }
+  );
+
+  // Now delete all cached files!
   cachedFiles.forEach(function (fileName) {
     fs.unlinkSync(fileName);
   });
