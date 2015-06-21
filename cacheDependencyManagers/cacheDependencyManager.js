@@ -16,6 +16,12 @@ var getFileHash = function (filePath) {
   return md5(file);
 };
 
+// Given a path relative to process' current working directory,
+// returns a normalized absolute path
+var getAbsolutePath = function (relativePath) {
+  return path.resolve(process.cwd(), relativePath);
+};
+
 CacheDependencyManager.prototype.cacheLogInfo = function (message) {
   logger.logInfo('[' + this.config.cliName + '] ' + message);
 };
@@ -42,7 +48,7 @@ CacheDependencyManager.prototype.installDependencies = function () {
 
 CacheDependencyManager.prototype.archiveDependencies = function (cachePath) {
   var error = null;
-  var installedDirectory = this.config.installDirectory;
+  var installedDirectory = getAbsolutePath(this.config.installDirectory);
   this.cacheLogInfo('archiving dependencies from ' + installedDirectory);
   if (shell.exec('tar -zcf ' + cachePath + ' ' + installedDirectory).code !== 0) {
     error = 'error tar-ing ' + installedDirectory;
@@ -56,12 +62,22 @@ CacheDependencyManager.prototype.archiveDependencies = function (cachePath) {
 
 CacheDependencyManager.prototype.extractDependencies = function (cachePath) {
   var error = null;
-  this.cacheLogInfo('extracting dependencies from ' + cachePath);
-  if (shell.exec('tar -zxf ' + cachePath).code !== 0) {
-    error = 'error untar-ing ' + cachePath;
+  var installedDirectory = getAbsolutePath(this.config.installDirectory);
+  this.cacheLogInfo('clearing installed dependencies at ' + installedDirectory);
+  var removeExitCode = shell.exec('rm -rf ' + installedDirectory).code;
+  if (removeExitCode !== 0) {
+    error = 'error removing installed dependencies at ' + installedDirectory;
     this.cacheLogError(error);
   } else {
-    this.cacheLogInfo('done extracting');
+    this.cacheLogInfo('...cleared');
+    this.cacheLogInfo('extracting dependencies from ' + cachePath);
+    var tarExtractCode = shell.exec('tar -zxf ' + cachePath).code;
+    if (tarExtractCode !== 0) {
+      error = 'error untar-ing ' + cachePath;
+      this.cacheLogError(error);
+    } else {
+      this.cacheLogInfo('done extracting');
+    }
   }
   return error;
 };
