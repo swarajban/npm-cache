@@ -5,6 +5,7 @@ var path = require('path');
 var logger = require('../util/logger');
 var md5 = require('MD5');
 var shell = require('shelljs');
+var targz = require('tar.gz');
 
 
 function CacheDependencyManager (config) {
@@ -46,7 +47,8 @@ CacheDependencyManager.prototype.installDependencies = function () {
 };
 
 
-CacheDependencyManager.prototype.archiveDependencies = function (cacheDirectory, cachePath) {
+CacheDependencyManager.prototype.archiveDependencies = function (cacheDirectory, cachePath, callback) {
+  var self = this;
   var error = null;
   var installedDirectory = getAbsolutePath(this.config.installDirectory);
   this.cacheLogInfo('archiving dependencies from ' + installedDirectory);
@@ -54,41 +56,49 @@ CacheDependencyManager.prototype.archiveDependencies = function (cacheDirectory,
   // Make sure cache directory is created
   shell.mkdir('-p', cacheDirectory);
 
-  // Now archive installed directory
-  if (shell.exec('tar -zcf ' + cachePath + ' -C ' + installedDirectory + ' .').code !== 0) {
-    error = 'error tar-ing ' + installedDirectory;
-    this.cacheLogError(error);
-    shell.rm(cachePath);
-  } else {
-    this.cacheLogInfo('done archiving');
-  }
-  return error;
+  new targz().compress(
+    installedDirectory,
+    cachePath,
+    function onCompressed (compressErr) {
+      if (compressErr) {
+        error = 'error tar-ing ' + installedDirectory;
+        self.cacheLogError(error);
+      } else {
+        self.cacheLogInfo('installed and archived dependencies');
+      }
+      callback(error);
+    }
+  );
 };
 
-CacheDependencyManager.prototype.extractDependencies = function (cachePath) {
+CacheDependencyManager.prototype.extractDependencies = function (cachePath, callback) {
+  var self = this;
   var error = null;
-  var installedDirectory = getAbsolutePath(this.config.installDirectory);
-  this.cacheLogInfo('clearing installed dependencies at ' + installedDirectory);
-  var removeExitCode = shell.exec('rm -rf ' + installedDirectory).code;
+  var installDirectory = getAbsolutePath(this.config.installDirectory);
+  this.cacheLogInfo('clearing installed dependencies at ' + installDirectory);
+  var removeExitCode = shell.exec('rm -rf ' + installDirectory).code;
   if (removeExitCode !== 0) {
-    error = 'error removing installed dependencies at ' + installedDirectory;
+    error = 'error removing installed dependencies at ' + installDirectory;
     this.cacheLogError(error);
+    callback(error);
   } else {
     this.cacheLogInfo('...cleared');
-
-    // Make sure install directory is created
-    shell.mkdir('-p', installedDirectory);
-
     this.cacheLogInfo('extracting dependencies from ' + cachePath);
-    var tarExtractCode = shell.exec('tar -zxf ' + cachePath + ' -C ' + installedDirectory).code;
-    if (tarExtractCode !== 0) {
-      error = 'error untar-ing ' + cachePath;
-      this.cacheLogError(error);
-    } else {
-      this.cacheLogInfo('done extracting');
-    }
+    new targz().extract(
+      cachePath,
+      process.cwd(),
+      function onExtracted (extractErr) {
+        if (extractErr) {
+          error = 'error extracting ' + cachePath;
+          self.cacheLogError(error);
+        } else {
+          self.cacheLogInfo('done extracting');
+        }
+        callback(error);
+
+      }
+    );
   }
-  return error;
 };
 
 
@@ -126,12 +136,15 @@ CacheDependencyManager.prototype.loadDependencies = function (callback) {
     this.cacheLogInfo('cache exists');
 
     // Try to extract dependencies
-    error = this.extractDependencies(cachePath);
-    if (error !== null) {
-      callback(error);
-      return;
-    }
-    // Success!
+    this.extractDependencies(
+      cachePath,
+      function onExtracted (extractErr) {
+        if (extractErr) {
+          error = extractErr;
+        }
+        callback(error);
+      }
+    );
 
   } else { // install dependencies with CLI tool and cache
 
@@ -143,17 +156,17 @@ CacheDependencyManager.prototype.loadDependencies = function (callback) {
     }
 
     // Try to archive newly installed dependencies
-    error = this.archiveDependencies(cacheDirectory, cachePath);
-    if (error !== null) {
-      callback(error);
-      return;
-    }
-
-    // Success!
-    self.cacheLogInfo('installed and archived dependencies');
+    this.archiveDependencies(
+      cacheDirectory,
+      cachePath,
+      function onArchived (archiveError) {
+        if (archiveError) {
+          error = archiveError;
+        }
+        callback(error);
+      }
+    );
   }
-
-  callback(error);
 };
 
 /**

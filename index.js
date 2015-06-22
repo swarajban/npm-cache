@@ -14,8 +14,6 @@ var CacheDependencyManager = require('./cacheDependencyManagers/cacheDependencyM
 
 // Main entry point for npm-cache
 var main = function () {
-  checkTarExists();
-
   // Parse CLI Args
   parser.command('install')
     .callback(installDependencies)
@@ -65,14 +63,6 @@ var main = function () {
 
   var npmCacheArgs = ParseUtils.getNpmCacheArgs();
   parser.parse(npmCacheArgs);
-};
-
-// Verify system 'tar' command, exit if if it doesn't exist
-var checkTarExists = function () {
-  if (! shell.which('tar')) {
-    logger.logError('tar command-line tool not found. exiting...');
-    process.exit(1);
-  }
 };
 
 // Creates cache directory if it does not exist yet

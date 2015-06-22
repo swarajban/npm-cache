@@ -27,7 +27,8 @@
     "glob": "5.0.10",
     "lodash": "3.5.0",
     "nomnom": "1.8.1",
-    "shelljs": "0.5.1"
+    "shelljs": "0.5.1",
+    "tar.gz": "0.1.1"
   },
   "preferGlobal": true,
   "bin": {
