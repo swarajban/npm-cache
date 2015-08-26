@@ -20,10 +20,17 @@ var getCliVersion = function () {
   return version;
 };
 
+var composerFile = path.resolve(process.cwd(), 'composer.json');
+
+// composer supports the ability to override vendor directory path
+// so let's make it possible to check
+var composer = require(composerFile);
+composer.config = composer.config || {};
+
 module.exports = {
   cliName: 'composer',
   getCliVersion: getCliVersion,
-  configPath: path.resolve(process.cwd(), 'composer.json'),
-  installDirectory: 'vendor',
+  configPath: composerFile,
+  installDirectory: composer.config['vendor-dir'] || 'vendor',
   installCommand: 'composer install'
 };
