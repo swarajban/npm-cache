@@ -1,8 +1,31 @@
 'use strict';
 
+var fs = require('fs');
 var path = require('path');
 var shell = require('shelljs');
 var logger = require('../util/logger');
+
+var composerFilePath = path.resolve(process.cwd(), 'composer.json');
+
+
+// Composer.json can specify a custom vendor directory
+// Let's get it if we can!
+var getComposerInstallDirectory = function () {
+  var composerInstallDirectory = 'vendor';
+
+  var exists = null;
+  try {
+    exists = fs.statSync(composerFilePath);
+  } catch (e) {}
+
+  if (exists !== null) {
+    var composerConfig = require(composerFilePath);
+    if ('config' in composerConfig && 'vendor-dir' in composerConfig.config) {
+      composerInstallDirectory = composerConfig.config['vendor-dir'];
+    }
+  }
+  return composerInstallDirectory;
+};
 
 // Function to extract composer version number
 var getCliVersion = function () {
@@ -20,17 +43,11 @@ var getCliVersion = function () {
   return version;
 };
 
-var composerFile = path.resolve(process.cwd(), 'composer.json');
-
-// composer supports the ability to override vendor directory path
-// so let's make it possible to check
-var composer = require(composerFile);
-composer.config = composer.config || {};
 
 module.exports = {
   cliName: 'composer',
   getCliVersion: getCliVersion,
-  configPath: composerFile,
-  installDirectory: composer.config['vendor-dir'] || 'vendor',
+  configPath: composerFilePath,
+  installDirectory: getComposerInstallDirectory(),
   installCommand: 'composer install'
 };
