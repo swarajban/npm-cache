@@ -13,6 +13,7 @@ function CacheDependencyManager (config) {
 
 var getFileHash = function (filePath) {
   var file = fs.readFileSync(filePath);
+  file = file.replace(/\"version"\:\s*"[0-9.]+",/, '');
   return md5(file);
 };
 
