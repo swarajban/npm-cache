@@ -25,7 +25,6 @@ function getFileHash(filePath) {
   return md5(JSON.stringify({
     dependencies: json.dependencies,
     devDependencies: json.devDependencies,
-    devDependencies: json.devDependencies,
     overrides: json.overrides
   }));
 };
