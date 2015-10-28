@@ -43,11 +43,19 @@ var getCliVersion = function () {
   return version;
 };
 
+function getFileHash(filePath) {
+  var json = JSON.parse(fs.readFileSync(filePath));
+  return md5(JSON.stringify({
+    packages: json.require,
+    packagesDev: json['require-dev']
+  }));
+};
 
 module.exports = {
   cliName: 'composer',
   getCliVersion: getCliVersion,
   configPath: composerFilePath,
   installDirectory: getComposerInstallDirectory(),
-  installCommand: 'composer install'
+  installCommand: 'composer install',
+  getFileHash: getFileHash
 };

@@ -20,6 +20,15 @@ var getBowerInstallDirectory = function () {
 };
 
 
+function getFileHash(filePath) {
+  var json = JSON.parse(fs.readFileSync(filePath));
+  return md5(JSON.stringify({
+    dependencies: json.dependencies,
+    devDependencies: json.devDependencies,
+    overrides: json.overrides
+  }));
+};
+
 module.exports = {
   cliName: 'bower',
   getCliVersion: function getNpmVersion () {
@@ -27,5 +36,6 @@ module.exports = {
   },
   configPath: path.resolve(process.cwd(), 'bower.json'),
   installDirectory: getBowerInstallDirectory(),
-  installCommand: 'bower install'
+  installCommand: 'bower install',
+  getFileHash: getFileHash
 };
