@@ -11,12 +11,6 @@ function CacheDependencyManager (config) {
   this.config = config;
 }
 
-var getFileHash = function (filePath) {
-  var file = fs.readFileSync(filePath);
-  file = file.replace(/\"version"\:\s*"[0-9.]+",/, '');
-  return md5(file);
-};
-
 // Given a path relative to process' current working directory,
 // returns a normalized absolute path
 var getAbsolutePath = function (relativePath) {
@@ -116,7 +110,7 @@ CacheDependencyManager.prototype.loadDependencies = function (callback) {
 
 
   // Get hash of dependency config file
-  var hash = getFileHash(this.config.configPath);
+  var hash = this.config.getFileHash(this.config.configPath);
   this.cacheLogInfo('hash of ' + this.config.configPath + ': ' + hash);
   // cachePath is absolute path to where local cache of dependencies is located
   var cacheDirectory = path.resolve(this.config.cacheDirectory, this.config.cliName, this.config.getCliVersion());

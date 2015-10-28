@@ -20,6 +20,13 @@ var getNpmConfigPath = function () {
   }
 };
 
+function getFileHash(filePath) {
+  var json = JSON.parse(fs.readFileSync(filePath));
+  return md5(JSON.stringify({
+    dependencies: json.dependencies,
+    devDependencies: json.devDependencies
+  }));
+};
 
 module.exports = {
   cliName: 'npm',
@@ -28,5 +35,6 @@ module.exports = {
   },
   configPath: getNpmConfigPath(),
   installDirectory: 'node_modules',
-  installCommand: 'npm install'
+  installCommand: 'npm install',
+  getFileHash: getFileHash
 };
