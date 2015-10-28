@@ -3,6 +3,7 @@
 var path = require('path');
 var shell = require('shelljs');
 var fs = require('fs');
+var md5 = require('md5');
 var logger = require('../util/logger');
 
 var getBowerInstallDirectory = function () {

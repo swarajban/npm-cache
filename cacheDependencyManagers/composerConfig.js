@@ -4,7 +4,7 @@ var fs = require('fs');
 var path = require('path');
 var shell = require('shelljs');
 var logger = require('../util/logger');
-
+var md5 = require('md5');
 var composerFilePath = path.resolve(process.cwd(), 'composer.json');
 
 
@@ -47,7 +47,8 @@ function getFileHash(filePath) {
   var json = JSON.parse(fs.readFileSync(filePath));
   return md5(JSON.stringify({
     packages: json.require,
-    packagesDev: json['require-dev']
+    packagesDev: json['require-dev'],
+    repos: json.repositories
   }));
 };
 
