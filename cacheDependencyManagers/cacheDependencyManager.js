@@ -3,7 +3,7 @@
 var fs = require('fs');
 var path = require('path');
 var logger = require('../util/logger');
-var md5 = require('MD5');
+var md5 = require('md5');
 var shell = require('shelljs');
 
 
