@@ -45,6 +45,11 @@ CacheDependencyManager.prototype.archiveDependencies = function (cacheDirectory,
   var installedDirectory = getAbsolutePath(this.config.installDirectory);
   this.cacheLogInfo('archiving dependencies from ' + installedDirectory);
 
+  if (!fs.existsSync(installedDirectory)) {
+	   this.cacheLogInfo('skipping archive. Install directory does not exist.');
+	   return error;
+  }
+
   // Make sure cache directory is created
   shell.mkdir('-p', cacheDirectory);
 
