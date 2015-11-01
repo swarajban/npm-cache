@@ -3,6 +3,7 @@
 var path = require('path');
 var shell = require('shelljs');
 var fs = require('fs');
+var md5 = require('md5');
 var logger = require('../util/logger');
 
 
@@ -20,6 +21,13 @@ var getNpmConfigPath = function () {
   }
 };
 
+function getFileHash(filePath) {
+  var json = JSON.parse(fs.readFileSync(filePath));
+  return md5(JSON.stringify({
+    dependencies: json.dependencies,
+    devDependencies: json.devDependencies
+  }));
+};
 
 module.exports = {
   cliName: 'npm',
@@ -28,5 +36,6 @@ module.exports = {
   },
   configPath: getNpmConfigPath(),
   installDirectory: 'node_modules',
-  installCommand: 'npm install'
+  installCommand: 'npm install',
+  getFileHash: getFileHash
 };

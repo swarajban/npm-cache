@@ -3,7 +3,6 @@
 var fs = require('fs');
 var path = require('path');
 var logger = require('../util/logger');
-var md5 = require('MD5');
 var shell = require('shelljs');
 var targz = require('tar.gz');
 
@@ -11,11 +10,6 @@ var targz = require('tar.gz');
 function CacheDependencyManager (config) {
   this.config = config;
 }
-
-var getFileHash = function (filePath) {
-  var file = fs.readFileSync(filePath);
-  return md5(file);
-};
 
 // Given a path relative to process' current working directory,
 // returns a normalized absolute path
@@ -125,7 +119,7 @@ CacheDependencyManager.prototype.loadDependencies = function (callback) {
 
 
   // Get hash of dependency config file
-  var hash = getFileHash(this.config.configPath);
+  var hash = this.config.getFileHash(this.config.configPath);
   this.cacheLogInfo('hash of ' + this.config.configPath + ': ' + hash);
   // cachePath is absolute path to where local cache of dependencies is located
   var cacheDirectory = path.resolve(this.config.cacheDirectory, this.config.cliName, this.config.getCliVersion());
