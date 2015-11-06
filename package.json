@@ -16,6 +16,10 @@
     "local"
   ],
   "author": "swaraj",
+  "contributors": [{
+	  "name": "Aaron Nordyke",
+	  "email": "aaron.nordyke@gmail.com"
+  }],
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/swarajban/npm-cache/issues"
