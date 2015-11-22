@@ -68,9 +68,10 @@ CacheDependencyManager.prototype.extractDependencies = function (cachePath) {
   var error = null;
   var installedDirectory = getAbsolutePath(this.config.installDirectory);
   this.cacheLogInfo('clearing installed dependencies at ' + installedDirectory);
-  var removeExitCode = shell.exec('rm -rf "' + installedDirectory + '"').code;
-  if (removeExitCode !== 0) {
-    error = 'error removing installed dependencies at ' + installedDirectory;
+  shell.rm('-rf', installedDirectory);
+  var removeExitCode = shell.error();
+  if (removeExitCode) {
+    error = 'error removing installed dependencies at ' + installedDirectory + ': ' + removeExitCode;
     this.cacheLogError(error);
   } else {
     this.cacheLogInfo('...cleared');
