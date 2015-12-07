@@ -96,7 +96,7 @@ var installDependencies = function (opts) {
       manager.loadDependencies(callback);
     },
     function onInstalled (error) {
-      if (error === undefined) {
+      if (error === null) {
         logger.logInfo('successfully installed all dependencies');
         process.exit(0);
       } else {
