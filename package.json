@@ -26,12 +26,15 @@
   },
   "homepage": "https://github.com/swarajban/npm-cache",
   "dependencies": {
+    "async": "1.5.0",
+    "fs-extra": "^0.26.2",
+    "glob": "6.0.1",
+    "lodash": "3.10.1",
     "md5": "2.0.0",
-    "async": "0.9.0",
-    "glob": "5.0.10",
-    "lodash": "3.5.0",
     "nomnom": "1.8.1",
-    "shelljs": "0.5.1"
+    "shelljs": "0.5.3",
+    "tar.gz": "1.0.2",
+    "which": "^1.2.0"
   },
   "preferGlobal": true,
   "bin": {

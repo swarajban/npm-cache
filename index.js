@@ -1,9 +1,8 @@
 #! /usr/bin/env node
 'use strict';
 
-var fs = require('fs');
+var fs = require('fs-extra');
 var path = require('path');
-var shell = require('shelljs');
 var parser = require('nomnom');
 var async = require('async');
 var glob = require('glob');
@@ -14,8 +13,6 @@ var CacheDependencyManager = require('./cacheDependencyManagers/cacheDependencyM
 
 // Main entry point for npm-cache
 var main = function () {
-  checkTarExists();
-
   // Parse CLI Args
   parser.command('install')
     .callback(installDependencies)
@@ -67,20 +64,12 @@ var main = function () {
   parser.parse(npmCacheArgs);
 };
 
-// Verify system 'tar' command, exit if if it doesn't exist
-var checkTarExists = function () {
-  if (! shell.which('tar')) {
-    logger.logError('tar command-line tool not found. exiting...');
-    process.exit(1);
-  }
-};
-
 // Creates cache directory if it does not exist yet
 var prepareCacheDirectory = function (cacheDirectory) {
   logger.logInfo('using ' + cacheDirectory + ' as cache directory');
   if (! fs.existsSync(cacheDirectory)) {
     // create directory if it doesn't exist
-    shell.mkdir('-p', cacheDirectory);
+    fs.mkdirsSync(cacheDirectory);
     logger.logInfo('creating cache directory');
   }
 };
@@ -106,7 +95,7 @@ var installDependencies = function (opts) {
       manager.loadDependencies(callback);
     },
     function onInstalled (error) {
-      if (error === undefined) {
+      if (error === null) {
         logger.logInfo('successfully installed all dependencies');
         process.exit(0);
       } else {

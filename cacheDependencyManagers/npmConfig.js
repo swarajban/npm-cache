@@ -27,7 +27,7 @@ function getFileHash(filePath) {
     dependencies: json.dependencies,
     devDependencies: json.devDependencies
   }));
-};
+}
 
 module.exports = {
   cliName: 'npm',
