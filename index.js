@@ -1,9 +1,8 @@
 #! /usr/bin/env node
 'use strict';
 
-var fs = require('fs');
+var fs = require('fs-extra');
 var path = require('path');
-var shell = require('shelljs');
 var parser = require('nomnom');
 var async = require('async');
 var glob = require('glob');
@@ -70,7 +69,7 @@ var prepareCacheDirectory = function (cacheDirectory) {
   logger.logInfo('using ' + cacheDirectory + ' as cache directory');
   if (! fs.existsSync(cacheDirectory)) {
     // create directory if it doesn't exist
-    shell.mkdir('-p', cacheDirectory);
+    fs.mkdirsSync(cacheDirectory);
     logger.logInfo('creating cache directory');
   }
 };

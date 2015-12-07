@@ -1,9 +1,10 @@
 'use strict';
 
-var fs = require('fs');
+var fs = require('fs-extra');
 var path = require('path');
 var logger = require('../util/logger');
 var shell = require('shelljs');
+var which = require('which');
 var targz = require('tar.gz');
 
 
@@ -48,7 +49,7 @@ CacheDependencyManager.prototype.archiveDependencies = function (cacheDirectory,
   this.cacheLogInfo('archiving dependencies from ' + installedDirectory);
 
   // Make sure cache directory is created
-  shell.mkdir('-p', cacheDirectory);
+  fs.mkdirsSync(cacheDirectory);
 
   new targz().compress(
     installedDirectory,
@@ -70,29 +71,23 @@ CacheDependencyManager.prototype.extractDependencies = function (cachePath, call
   var error = null;
   var installDirectory = getAbsolutePath(this.config.installDirectory);
   this.cacheLogInfo('clearing installed dependencies at ' + installDirectory);
-  var removeExitCode = shell.exec('rm -rf ' + installDirectory).code;
-  if (removeExitCode !== 0) {
-    error = 'error removing installed dependencies at ' + installDirectory;
-    this.cacheLogError(error);
-    callback(error);
-  } else {
-    this.cacheLogInfo('...cleared');
-    this.cacheLogInfo('extracting dependencies from ' + cachePath);
-    new targz().extract(
-      cachePath,
-      process.cwd(),
-      function onExtracted (extractErr) {
-        if (extractErr) {
-          error = 'error extracting ' + cachePath;
-          self.cacheLogError(error);
-        } else {
-          self.cacheLogInfo('done extracting');
-        }
-        callback(error);
-
+  fs.removeSync(installDirectory);
+  this.cacheLogInfo('...cleared');
+  this.cacheLogInfo('extracting dependencies from ' + cachePath);
+  new targz().extract(
+    cachePath,
+    process.cwd(),
+    function onExtracted (extractErr) {
+      if (extractErr) {
+        error = 'error extracting ' + cachePath;
+        self.cacheLogError(error);
+      } else {
+        self.cacheLogInfo('done extracting');
       }
-    );
-  }
+      callback(error);
+
+    }
+  );
 };
 
 
@@ -109,14 +104,16 @@ CacheDependencyManager.prototype.loadDependencies = function (callback) {
   this.cacheLogInfo('config file exists');
 
   // Check if package manger CLI is installed
-  if (! shell.which(this.config.cliName)) {
+  try {
+    which.sync(this.config.cliName);
+    this.cacheLogInfo('cli exists');
+  }
+  catch (e) {
     error = 'Command line tool ' + this.config.cliName + ' not installed';
     this.cacheLogError(error);
     callback(error);
     return;
   }
-  this.cacheLogInfo('cli exists');
-
 
   // Get hash of dependency config file
   var hash = this.config.getFileHash(this.config.configPath);
