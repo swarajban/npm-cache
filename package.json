@@ -16,10 +16,12 @@
     "local"
   ],
   "author": "swaraj",
-  "contributors": [{
-	  "name": "Aaron Nordyke",
-	  "email": "aaron.nordyke@gmail.com"
-  }],
+  "contributors": [
+    {
+      "name": "Aaron Nordyke",
+      "email": "aaron.nordyke@gmail.com"
+    }
+  ],
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/swarajban/npm-cache/issues"
@@ -27,6 +29,7 @@
   "homepage": "https://github.com/swarajban/npm-cache",
   "dependencies": {
     "async": "1.5.0",
+    "decompress": "^3.0.0",
     "fs-extra": "^0.26.2",
     "glob": "6.0.1",
     "lodash": "3.10.1",

@@ -6,6 +6,7 @@ var logger = require('../util/logger');
 var shell = require('shelljs');
 var which = require('which');
 var targz = require('tar.gz');
+var Decompress = require('decompress');
 
 
 function CacheDependencyManager (config) {
@@ -79,19 +80,23 @@ CacheDependencyManager.prototype.extractDependencies = function (cachePath, call
   fs.removeSync(installDirectory);
   this.cacheLogInfo('...cleared');
   this.cacheLogInfo('extracting dependencies from ' + cachePath);
-  new targz().extract(
-    cachePath,
-    process.cwd(),
-    function onExtracted (extractErr) {
-      if (extractErr) {
-        error = 'error extracting ' + cachePath;
-        self.cacheLogError(error);
-      } else {
-        self.cacheLogInfo('done extracting');
+
+
+  new Decompress()
+    .src(cachePath)
+    .dest(process.cwd())
+    .use(Decompress.targz())
+    .run(
+      function onExtracted (extractErr) {
+        if (extractErr) {
+          error = 'Error extracting ' + cachePath + ': ' + extractErr;
+          self.cacheLogError(error);
+        } else {
+          self.cacheLogInfo('done extracting');
+        }
+        callback(error);
       }
-      callback(error);
-    }
-  );
+    );
 };
 
 
