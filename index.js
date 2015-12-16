@@ -29,7 +29,7 @@ var main = function () {
     .help('clear cache directory');
 
   parser.option('cacheDirectory', {
-    default: path.resolve(process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE, '.package_cache'),
+    default: process.env.NPM_CACHE_DIR || path.resolve(process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE, '.package_cache'),
     abbr: 'c',
     help: 'directory where dependencies will be cached'
   });
