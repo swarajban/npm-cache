@@ -28,6 +28,10 @@ var main = function () {
     .callback(cleanCache)
     .help('clear cache directory');
 
+  parser.command('hash')
+    .callback(reportHash)
+    .help('reports the current working hash');
+
   parser.option('cacheDirectory', {
     default: process.env.NPM_CACHE_DIR || path.resolve(process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE, '.package_cache'),
     abbr: 'c',
@@ -56,7 +60,8 @@ var main = function () {
     '\tnpm-cache install bower --allow-root composer --dry-run\t# install bower with allow-root, and composer with --dry-run',
     '\tnpm-cache install --cacheDirectory /home/cache/ bower \t# install components using /home/cache as cache directory',
     '\tnpm-cache install --forceRefresh  bower\t# force installing dependencies from package manager without cache',
-    '\tnpm-cache clean\t# cleans out all cached files in cache directory'
+    '\tnpm-cache clean\t# cleans out all cached files in cache directory',
+    '\tnpm-cache hash\t# reports the current working hash'
   ];
   parser.help(examples.join('\n'));
 
@@ -102,6 +107,28 @@ var installDependencies = function (opts) {
         logger.logError('error installing dependencies');
         process.exit(1);
       }
+    }
+  );
+};
+
+var reportHash = function (opts) {
+  var availableManagers = CacheDependencyManager.getAvailableManagers();
+  var managerArguments = ParseUtils.getManagerArgs();
+  var managers = Object.keys(managerArguments);
+
+  if (managers.length > 1) {
+    logger.logError('can only calculate hash for one dependency manager at a time');
+    process.exit(1);
+  }
+
+  async.each(
+    managers,
+    function calculateHash (managerName) {
+      var managerConfig = require(availableManagers[managerName]);
+      managerConfig.cacheDirectory = opts.cacheDirectory;
+
+      var hash = managerConfig.getFileHash(managerConfig.configPath);
+      console.log(hash);
     }
   );
 };
