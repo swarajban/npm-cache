@@ -1,0 +1,5 @@
+{
+    "require": {
+        "eher/phpwatch": "^1.5"
+    }
+}

@@ -1,6 +1,6 @@
 {
   "name": "npm-cache",
-  "version": "0.4.13",
+  "version": "0.5.0",
   "description": "cache dependency manager installs to local machine",
   "main": "index.js",
   "repository": {
@@ -38,6 +38,11 @@
     "shelljs": "0.5.3",
     "tar.gz": "1.0.2",
     "which": "^1.2.0"
+  },
+  "devDependencies": {
+    "mocha": "^2.3.4",
+    "mock-fs": "^3.6.0",
+    "should": "^8.1.1"
   },
   "preferGlobal": true,
   "bin": {
