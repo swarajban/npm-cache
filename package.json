@@ -39,11 +39,6 @@
     "tar.gz": "1.0.2",
     "which": "^1.2.0"
   },
-  "devDependencies": {
-    "mocha": "^2.3.4",
-    "mock-fs": "^3.6.0",
-    "should": "^8.1.1"
-  },
   "preferGlobal": true,
   "bin": {
     "npm-cache": "index.js"
