@@ -5,7 +5,7 @@ var path = require('path');
 var shell = require('shelljs');
 var logger = require('../util/logger');
 var md5 = require('md5');
-var isUsingComposerLock = false;
+var isUsingComposerLock = null;
 
 // Returns path to configuration file for composer. Uses
 // composer.lock if it exists; otherwise,
@@ -14,9 +14,13 @@ var getComposerConfigPath = function () {
   var composerLockPath = path.resolve(process.cwd(), 'composer.lock');
   var composerJsonPath = path.resolve(process.cwd(), 'composer.json');
 
-  if (fs.existsSync(composerLockPath)) {
-    logger.logInfo('[composer] using composer.lock instead of composer.json');
-    isUsingComposerLock = true;
+  if (isUsingComposerLock === null) {
+    if (fs.existsSync(composerLockPath)) {
+      logger.logInfo('[composer] using composer.lock instead of composer.json');
+      isUsingComposerLock = true;
+    }  else {
+      isUsingComposerLock = false;
+    }
   }
 
   return isUsingComposerLock ? composerLockPath : composerJsonPath;
