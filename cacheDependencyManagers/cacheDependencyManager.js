@@ -5,8 +5,9 @@ var path = require('path');
 var logger = require('../util/logger');
 var shell = require('shelljs');
 var which = require('which');
-var targz = require('tar.gz');
-var Decompress = require('decompress');
+var tar = require('tar');
+var fsNode = require('fs');
+var fstream = require('fstream');
 
 
 function CacheDependencyManager (config) {
@@ -57,22 +58,28 @@ CacheDependencyManager.prototype.archiveDependencies = function (cacheDirectory,
   // Make sure cache directory is created
   fs.mkdirsSync(cacheDirectory);
 
-  new targz().compress(
-    installedDirectory,
-    cachePath,
-    function onCompressed (compressErr) {
-      if (compressErr) {
-        error = 'error tar-ing ' + installedDirectory;
-        self.cacheLogError(error);
-      } else {
-        self.cacheLogInfo('installed and archived dependencies');
-      }
-      callback(error);
-    }
-  );
+  var dirDest = fsNode.createWriteStream(cachePath);
+
+  function onError(err) {
+    error = 'error tar-ing ' + installedDirectory + ' :' + err;
+    self.cacheLogError(error);
+  }
+
+  function onEnd() {
+    self.cacheLogInfo('installed and archived dependencies');
+  }
+
+  var packer = tar.Pack({ noProprietary: true })
+                  .on('error', onError)
+                  .on('end', onEnd);
+
+  fstream.Reader({path: installedDirectory})
+         .on('error', onError)
+         .pipe(packer)
+         .pipe(dirDest);
 };
 
-CacheDependencyManager.prototype.extractDependencies = function (cachePath, callback) {
+CacheDependencyManager.prototype.extractDependencies = function (cachePath) {
   var self = this;
   var error = null;
   var installDirectory = getAbsolutePath(this.config.installDirectory);
@@ -81,22 +88,21 @@ CacheDependencyManager.prototype.extractDependencies = function (cachePath, call
   this.cacheLogInfo('...cleared');
   this.cacheLogInfo('extracting dependencies from ' + cachePath);
 
+  function onError(err) {
+    error = 'Error extracting ' + cachePath + ': ' + err;
+    self.cacheLogError(error);
+  }
+  function onEnd() {
+    self.cacheLogInfo('done extracting');
+  }
 
-  new Decompress()
-    .src(cachePath)
-    .dest(process.cwd())
-    .use(Decompress.targz())
-    .run(
-      function onExtracted (extractErr) {
-        if (extractErr) {
-          error = 'Error extracting ' + cachePath + ': ' + extractErr;
-          self.cacheLogError(error);
-        } else {
-          self.cacheLogInfo('done extracting');
-        }
-        callback(error);
-      }
-    );
+  var extractor = tar.Extract({path: process.cwd()})
+                     .on('error', onError)
+                     .on('end', onEnd);
+
+  fs.createReadStream(cachePath)
+    .on('error', onError)
+    .pipe(extractor);
 };
 
 
