@@ -1,7 +1,7 @@
 npm-cache
 =========
 
-`npm-cache` is a command line utility that caches dependencies installed via `npm`, `bower`, and `composer`.
+`npm-cache` is a command line utility that caches dependencies installed via `npm`, `bower`, `jspm` and `composer`.
 
 It is useful for build processes that run `[npm|bower|composer] install` every time as part of their 
 build process. Since dependencies don't change often, this often means slower build times. `npm-cache`
@@ -9,7 +9,7 @@ helps alleviate this problem by caching previously installed dependencies on the
 `npm-cache` can be a drop-in replacement for any build script that runs `[npm|bower|composer] install`. 
 
 ## How it Works
-When you run `npm-cache install [npm|bower|composer]`, it first looks for `package.json`, `bower.json`,
+When you run `npm-cache install [npm|bower|jspm|composer]`, it first looks for `package.json`, `bower.json`,
 or `composer.json` in the current working directory depending on which dependency manager is requested.
 It then calculates the MD5 hash of the configuration file and looks for a filed named 
 <MD5 of config.json>.tar.gz in the cache directory ($HOME/.package_cache by default). If the file does not

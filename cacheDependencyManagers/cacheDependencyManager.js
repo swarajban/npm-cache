@@ -22,6 +22,14 @@ var getAbsolutePath = function (relativePath) {
   return path.resolve(process.cwd(), relativePath);
 };
 
+var getFileBackupPath = function (installedDirectory) {
+  return path.join(installedDirectory, '.npm-cache');
+};
+
+var getFileBackupFilename = function (file) {
+  return path.basename(file) + '_' + md5(file);
+};
+
 CacheDependencyManager.prototype.cacheLogInfo = function (message) {
   logger.logInfo('[' + this.config.cliName + '] ' + message);
 };
@@ -45,16 +53,47 @@ CacheDependencyManager.prototype.installDependencies = function () {
   return error;
 };
 
+CacheDependencyManager.prototype.backupFile = function (backupPath, file) {
+  var sourceFile = getAbsolutePath(file);
+  var backupFilename = getFileBackupFilename(file);
+  var backupFile = path.join(backupPath, backupFilename);
+  if (!fs.existsSync(sourceFile)) {
+    this.cacheLogError('backup file [file not found]:' + file);
+    return;
+  }
+
+  fs.mkdirsSync(backupPath);
+  fs.copySync(sourceFile, backupFile);
+  this.cacheLogInfo('backup file: ' + file);
+};
+
+CacheDependencyManager.prototype.restoreFile = function (backupPath, file) {
+  var sourceFile = getAbsolutePath(file);
+  var backupFilename = getFileBackupFilename(file);
+  var backupFile = path.join(backupPath, backupFilename);
+  if (!fs.existsSync(backupFile)) {
+    this.cacheLogError('restore file [file not found]:' + file);
+    return;
+  }
+
+  fs.copySync(backupFile, sourceFile);
+  this.cacheLogInfo('restore file: ' + file);
+};
 
 CacheDependencyManager.prototype.archiveDependencies = function (cacheDirectory, cachePath, callback) {
   var self = this;
   var error = null;
   var installedDirectory = getAbsolutePath(this.config.installDirectory);
+  var fileBackupDirectory = getFileBackupPath(installedDirectory);
   this.cacheLogInfo('archiving dependencies from ' + installedDirectory);
 
   if (!fs.existsSync(installedDirectory)) {
     this.cacheLogInfo('skipping archive. Install directory does not exist.');
     return error;
+  }
+
+  if (this.config.addToArchiveAndRestore) {
+    this.backupFile(fileBackupDirectory, this.config.addToArchiveAndRestore);
   }
 
   // Make sure cache directory is created
@@ -64,12 +103,20 @@ CacheDependencyManager.prototype.archiveDependencies = function (cacheDirectory,
 
   function onError(error) {
     self.cacheLogError('error tar-ing ' + installedDirectory + ' :' + error);
+    onFinally();
     callback(error);
   }
 
   function onEnd() {
     self.cacheLogInfo('installed and archived dependencies');
+    onFinally();
     callback();
+  }
+
+  function onFinally() {
+    if (fs.existsSync(fileBackupDirectory)) {
+      fs.removeSync(fileBackupDirectory);
+    }
   }
 
   var packer = tar.Pack({ noProprietary: true })
@@ -85,6 +132,8 @@ CacheDependencyManager.prototype.archiveDependencies = function (cacheDirectory,
 CacheDependencyManager.prototype.extractDependencies = function (cachePath, callback) {
   var self = this;
   var installDirectory = getAbsolutePath(this.config.installDirectory);
+  var fileBackupDirectory = getFileBackupPath(installDirectory);
+  var targetPath = path.dirname(installDirectory);
   this.cacheLogInfo('clearing installed dependencies at ' + installDirectory);
   fs.removeSync(installDirectory);
   this.cacheLogInfo('...cleared');
@@ -95,11 +144,15 @@ CacheDependencyManager.prototype.extractDependencies = function (cachePath, call
     callback(error);
   }
   function onEnd() {
+    if (self.config.addToArchiveAndRestore) {
+      self.restoreFile(fileBackupDirectory, self.config.addToArchiveAndRestore);
+      fs.removeSync(fileBackupDirectory);
+    }
     self.cacheLogInfo('done extracting');
     callback();
   }
 
-  var extractor = tar.Extract({path: process.cwd()})
+  var extractor = tar.Extract({path: targetPath})
                      .on('error', onError)
                      .on('end', onEnd);
 
