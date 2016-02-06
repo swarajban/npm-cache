@@ -8,7 +8,9 @@ var which = require('which');
 var tar = require('tar');
 var fsNode = require('fs');
 var fstream = require('fstream');
+var md5 = require('md5');
 
+var cacheVersion = '1';
 
 function CacheDependencyManager (config) {
   this.config = config;
@@ -60,13 +62,14 @@ CacheDependencyManager.prototype.archiveDependencies = function (cacheDirectory,
 
   var dirDest = fsNode.createWriteStream(cachePath);
 
-  function onError(err) {
-    error = 'error tar-ing ' + installedDirectory + ' :' + err;
-    self.cacheLogError(error);
+  function onError(error) {
+    self.cacheLogError('error tar-ing ' + installedDirectory + ' :' + error);
+    callback(error);
   }
 
   function onEnd() {
     self.cacheLogInfo('installed and archived dependencies');
+    callback();
   }
 
   var packer = tar.Pack({ noProprietary: true })
@@ -79,21 +82,21 @@ CacheDependencyManager.prototype.archiveDependencies = function (cacheDirectory,
          .pipe(dirDest);
 };
 
-CacheDependencyManager.prototype.extractDependencies = function (cachePath) {
+CacheDependencyManager.prototype.extractDependencies = function (cachePath, callback) {
   var self = this;
-  var error = null;
   var installDirectory = getAbsolutePath(this.config.installDirectory);
   this.cacheLogInfo('clearing installed dependencies at ' + installDirectory);
   fs.removeSync(installDirectory);
   this.cacheLogInfo('...cleared');
   this.cacheLogInfo('extracting dependencies from ' + cachePath);
 
-  function onError(err) {
-    error = 'Error extracting ' + cachePath + ': ' + err;
-    self.cacheLogError(error);
+  function onError(error) {
+    self.cacheLogError('Error extracting ' + cachePath + ': ' + error);
+    callback(error);
   }
   function onEnd() {
     self.cacheLogInfo('done extracting');
+    callback();
   }
 
   var extractor = tar.Extract({path: process.cwd()})
@@ -132,6 +135,7 @@ CacheDependencyManager.prototype.loadDependencies = function (callback) {
 
   // Get hash of dependency config file
   var hash = this.config.getFileHash(this.config.configPath);
+  hash = md5(cacheVersion + hash);
   this.cacheLogInfo('hash of ' + this.config.configPath + ': ' + hash);
   // cachePath is absolute path to where local cache of dependencies is located
   var cacheDirectory = path.resolve(this.config.cacheDirectory, this.config.cliName, this.config.getCliVersion());
