@@ -5,7 +5,7 @@ var path = require('path');
 var shell = require('shelljs');
 var logger = require('../util/logger');
 var md5 = require('md5');
-var isUsingComposerLock = null;
+var isUsingComposerJson = null;
 
 // Returns path to configuration file for composer. Uses
 // composer.lock if it exists; otherwise,
@@ -14,16 +14,12 @@ var getComposerConfigPath = function () {
   var composerLockPath = path.resolve(process.cwd(), 'composer.lock');
   var composerJsonPath = path.resolve(process.cwd(), 'composer.json');
 
-  if (isUsingComposerLock === null) {
-    if (fs.existsSync(composerLockPath)) {
-      logger.logInfo('[composer] using composer.lock instead of composer.json');
-      isUsingComposerLock = true;
-    }  else {
-      isUsingComposerLock = false;
-    }
+  if (isUsingComposerJson === null && !fs.existsSync(composerLockPath)) {
+    logger.logInfo('[composer] using composer.json instead of composer.lock');
+    isUsingComposerJson = true;
   }
 
-  return isUsingComposerLock ? composerLockPath : composerJsonPath;
+  return isUsingComposerJson ? composerJsonPath : composerLockPath;
 };
 
 // Composer.json can specify a custom vendor directory
@@ -64,15 +60,15 @@ var getCliVersion = function () {
 function getFileHash(filePath) {
   var json = JSON.parse(fs.readFileSync(filePath));
 
-  if (isUsingComposerLock) {
-    return json['content-hash'];
+  if (isUsingComposerJson) {
+    return md5(JSON.stringify({
+      packages: json.require,
+      packagesDev: json['require-dev'],
+      repos: json.repositories
+    }));
   }
 
-  return md5(JSON.stringify({
-    packages: json.require,
-    packagesDev: json['require-dev'],
-    repos: json.repositories
-  }));
+  return json['content-hash'];
 };
 
 module.exports = {
