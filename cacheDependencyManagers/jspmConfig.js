@@ -61,21 +61,31 @@ function getInstallDirectory() {
  */
 function getConfigFile() {
     var jspm = getPackageJson().jspm;
-    var defaultFile = 'config.js';
 
-    if (jspm && jspm.configFile) {
+    if (!jspm) {
+        // return invalid filename, as "jspm" must exist inside package.json
+        return 'package.json(namespace:jspm)';
+    }
+
+    if (jspm.configFile) {
         var configFile = jspm.configFile;
         logger.logInfo('[jspm] config located at ' + configFile + ' per package.json jspm.configFile');
         return configFile;
     }
 
-    if (jspm && jspm.directories && jspm.directories.baseURL) {
-        var baseUrlFile = path.join(jspm.directories.baseURL, defaultFile);
-        logger.logInfo('[jspm] config located at ' + baseUrlFile + ' per package.json jspm.directories.baseURL');
-        return baseUrlFile;
+    var baseURL = '';
+    if (jspm.directories && jspm.directories.baseURL) {
+        baseURL = jspm.directories.baseURL;
+        logger.logInfo('[jspm] config located in ' + baseURL + ' per package.json jspm.directories.baseURL');
     }
 
-    return defaultFile;
+    var file = {
+        'jspm@0.16': path.join(baseURL, 'config.js'),
+        'jspm@0.17': path.join(baseURL, 'jspm.config.js')
+    };
+
+    // jspm changed default config filename in 0.17, so check for both
+    return fs.existsSync(file['jspm@0.17']) ? file['jspm@0.17'] : file['jspm@0.16'];
 }
 
 /**

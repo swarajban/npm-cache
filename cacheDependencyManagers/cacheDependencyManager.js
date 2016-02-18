@@ -9,6 +9,7 @@ var tar = require('tar');
 var fsNode = require('fs');
 var fstream = require('fstream');
 var md5 = require('md5');
+var _ = require('lodash');
 
 var cacheVersion = '1';
 
@@ -230,6 +231,15 @@ CacheDependencyManager.prototype.loadDependencies = function (callback) {
       }
     );
   }
+};
+
+/**
+ * only return 'composer', 'npm' and 'bower' thereby `npm-cache install` doesn't change behavior if managers are added
+ *
+ * @returns {Object} availableDefaultManagers
+ */
+CacheDependencyManager.getAvailableDefaultManagers = function() {
+  return _.pick(CacheDependencyManager.getAvailableManagers(), ['composer', 'npm', 'bower']);
 };
 
 /**
