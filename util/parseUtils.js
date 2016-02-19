@@ -64,7 +64,7 @@ exports.getManagerArgs = function () {
   if (_.isEmpty(managers)) {
     // add all keys from available managers as keys here
     _.forEach(
-      availableManagers,
+      CacheDependencyManager.getAvailableDefaultManagers(),
       function addManager (managerPath, manager) {
         managers[manager] = '';
       }

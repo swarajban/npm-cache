@@ -12,6 +12,7 @@
     "cache",
     "install",
     "bower",
+    "jspm",
     "composer",
     "local"
   ],
