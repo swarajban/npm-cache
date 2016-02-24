@@ -6,7 +6,6 @@ var logger = require('../util/logger');
 var shell = require('shelljs');
 var which = require('which');
 var tar = require('tar');
-var fsNode = require('fs');
 var fstream = require('fstream');
 var md5 = require('md5');
 var _ = require('lodash');
@@ -100,8 +99,6 @@ CacheDependencyManager.prototype.archiveDependencies = function (cacheDirectory,
   // Make sure cache directory is created
   fs.mkdirsSync(cacheDirectory);
 
-  var dirDest = fsNode.createWriteStream(cachePath);
-
   function onError(error) {
     self.cacheLogError('error tar-ing ' + installedDirectory + ' :' + error);
     onFinally();
@@ -120,17 +117,20 @@ CacheDependencyManager.prototype.archiveDependencies = function (cacheDirectory,
     }
   }
 
-  var packer = tar.Pack({ noProprietary: true })
+  var installedDirectoryStream = fstream.Reader({path: installedDirectory}).on('error', onError);
+
+  if(!this.config.deflate) {
+    var packer = tar.Pack({ noProprietary: true })
                   .on('error', onError)
                   .on('end', onEnd);
-
-  fstream.Reader({path: installedDirectory})
-         .on('error', onError)
-         .pipe(packer)
-         .pipe(dirDest);
+    installedDirectoryStream = installedDirectoryStream.pipe(packer)
+  } else {
+    installedDirectoryStream = installedDirectoryStream.on('end', onEnd);
+  }
+  installedDirectoryStream.pipe(fstream.Writer(cachePath));
 };
 
-CacheDependencyManager.prototype.extractDependencies = function (cachePath, callback) {
+CacheDependencyManager.prototype.installCachedDependencies = function (cachePath, compressedCacheExists, callback) {
   var self = this;
   var installDirectory = getAbsolutePath(this.config.installDirectory);
   var fileBackupDirectory = getFileBackupPath(installDirectory);
@@ -138,10 +138,10 @@ CacheDependencyManager.prototype.extractDependencies = function (cachePath, call
   this.cacheLogInfo('clearing installed dependencies at ' + installDirectory);
   fs.removeSync(installDirectory);
   this.cacheLogInfo('...cleared');
-  this.cacheLogInfo('extracting dependencies from ' + cachePath);
+  this.cacheLogInfo('retrieving dependencies from ' + cachePath);
 
   function onError(error) {
-    self.cacheLogError('Error extracting ' + cachePath + ': ' + error);
+    self.cacheLogError('Error retrieving ' + cachePath + ': ' + error);
     callback(error);
   }
   function onEnd() {
@@ -149,17 +149,24 @@ CacheDependencyManager.prototype.extractDependencies = function (cachePath, call
       self.restoreFile(fileBackupDirectory, self.config.addToArchiveAndRestore);
       fs.removeSync(fileBackupDirectory);
     }
-    self.cacheLogInfo('done extracting');
+    self.cacheLogInfo('done retrieving dependencies');
     callback();
   }
 
-  var extractor = tar.Extract({path: targetPath})
-                     .on('error', onError)
-                     .on('end', onEnd);
+  if (compressedCacheExists) {
+    var extractor = tar.Extract({path: targetPath})
+        .on('error', onError)
+        .on('end', onEnd);
 
-  fs.createReadStream(cachePath)
-    .on('error', onError)
-    .pipe(extractor);
+    fs.createReadStream(cachePath)
+        .on('error', onError)
+        .pipe(extractor);
+  } else {
+    fstream.Reader(cachePath)
+        .on('error', onError)
+        .on('end', onEnd)
+        .pipe(fstream.Writer(targetPath));
+  }
 };
 
 
@@ -193,25 +200,23 @@ CacheDependencyManager.prototype.loadDependencies = function (callback) {
   this.cacheLogInfo('hash of ' + this.config.configPath + ': ' + hash);
   // cachePath is absolute path to where local cache of dependencies is located
   var cacheDirectory = path.resolve(this.config.cacheDirectory, this.config.cliName, this.config.getCliVersion());
-  var cachePath = path.resolve(cacheDirectory, hash + '.tar.gz');
+  var cachePathArchive = path.resolve(cacheDirectory, hash + '.tar.gz');
+  var cachePathDeflated = path.resolve(cacheDirectory, hash);
 
   // Check if local cache of dependencies exists
-  if (! this.config.forceRefresh && fs.existsSync(cachePath)) {
+  var cacheArchiveExists = fs.existsSync(cachePathArchive);
+  var cacheDeflatedExists = fs.existsSync(cachePathDeflated);
+  if (!this.config.forceRefresh && (cacheArchiveExists || cacheDeflatedExists)) {
     this.cacheLogInfo('cache exists');
 
-    // Try to extract dependencies
-    this.extractDependencies(
-      cachePath,
-      function onExtracted (extractErr) {
-        if (extractErr) {
-          error = extractErr;
-        }
-        callback(error);
-      }
+    // Try to retrieve cached dependencies
+    this.installCachedDependencies(
+      cacheArchiveExists ? cachePathArchive : cachePathDeflated,
+      cacheArchiveExists,
+      callback
     );
 
   } else { // install dependencies with CLI tool and cache
-
     // Try to install dependencies using package manager
     error = this.installDependencies();
     if (error !== null) {
@@ -220,15 +225,11 @@ CacheDependencyManager.prototype.loadDependencies = function (callback) {
     }
 
     // Try to archive newly installed dependencies
-    this.archiveDependencies(
-      cacheDirectory,
-      cachePath,
-      function onArchived (archiveError) {
-        if (archiveError) {
-          error = archiveError;
-        }
-        callback(error);
-      }
+    var deflatedCachePathWithInstalledDirectory = path.resolve(cachePathDeflated, this.config.installDirectory);
+      this.archiveDependencies(
+      this.config.deflate ? deflatedCachePathWithInstalledDirectory : cacheDirectory,
+      this.config.deflate ? deflatedCachePathWithInstalledDirectory : cachePathArchive,
+      callback
     );
   }
 };
