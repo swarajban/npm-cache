@@ -72,7 +72,7 @@ CacheDependencyManager.prototype.archiveDependencies = function (cacheDirectory,
 
   var installedDirectoryStream = fstream.Reader({path: installedDirectory}).on('error', onError);
 
-  if(!this.config.deflate) {
+  if(!this.config.noArchive) {
     var packer = tar.Pack({ noProprietary: true })
                   .on('error', onError)
                   .on('end', onEnd);
@@ -148,17 +148,17 @@ CacheDependencyManager.prototype.loadDependencies = function (callback) {
   // cachePath is absolute path to where local cache of dependencies is located
   var cacheDirectory = path.resolve(this.config.cacheDirectory, this.config.cliName, this.config.getCliVersion());
   var cachePathArchive = path.resolve(cacheDirectory, hash + '.tar.gz');
-  var cachePathDeflated = path.resolve(cacheDirectory, hash);
+  var cachePathNotArchived = path.resolve(cacheDirectory, hash);
 
   // Check if local cache of dependencies exists
   var cacheArchiveExists = fs.existsSync(cachePathArchive);
-  var cacheDeflatedExists = fs.existsSync(cachePathDeflated);
-  if (!this.config.forceRefresh && (cacheArchiveExists || cacheDeflatedExists)) {
+  var cacheNotArchivedExists = fs.existsSync(cachePathNotArchived);
+  if (!this.config.forceRefresh && (cacheArchiveExists || cacheNotArchivedExists)) {
     this.cacheLogInfo('cache exists');
 
     // Try to retrieve cached dependencies
     this.installCachedDependencies(
-      cacheArchiveExists ? cachePathArchive : cachePathDeflated,
+      cacheArchiveExists ? cachePathArchive : cachePathNotArchived,
       cacheArchiveExists,
       callback
     );
@@ -172,10 +172,10 @@ CacheDependencyManager.prototype.loadDependencies = function (callback) {
     }
 
     // Try to archive newly installed dependencies
-    var deflatedCachePathWithInstalledDirectory = path.resolve(cachePathDeflated, this.config.installDirectory);
+    var cachePathWithInstalledDirectory = path.resolve(cachePathNotArchived, this.config.installDirectory);
       this.archiveDependencies(
-      this.config.deflate ? deflatedCachePathWithInstalledDirectory : cacheDirectory,
-      this.config.deflate ? deflatedCachePathWithInstalledDirectory : cachePathArchive,
+      this.config.noArchive ? cachePathWithInstalledDirectory : cacheDirectory,
+      this.config.noArchive ? cachePathWithInstalledDirectory : cachePathArchive,
       callback
     );
   }
