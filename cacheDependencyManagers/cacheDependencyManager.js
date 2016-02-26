@@ -112,7 +112,7 @@ CacheDependencyManager.prototype.installCachedDependencies = function (cachePath
     fstream.Reader(cachePath)
         .on('error', onError)
         .on('end', onEnd)
-        .pipe(fstream.Writer(targetPath));
+        .pipe(fstream.Writer(process.cwd()));
   }
 };
 
