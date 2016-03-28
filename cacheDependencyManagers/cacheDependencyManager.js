@@ -9,6 +9,7 @@ var tar = require('tar');
 var fsNode = require('fs');
 var fstream = require('fstream');
 var md5 = require('md5');
+var tmp = require('tmp');
 var _ = require('lodash');
 
 var cacheVersion = '1';
@@ -100,7 +101,8 @@ CacheDependencyManager.prototype.archiveDependencies = function (cacheDirectory,
   // Make sure cache directory is created
   fs.mkdirsSync(cacheDirectory);
 
-  var dirDest = fsNode.createWriteStream(cachePath);
+  var tmpName = tmp.tmpNameSync();
+  var dirDest = fsNode.createWriteStream(tmpName);
 
   function onError(error) {
     self.cacheLogError('error tar-ing ' + installedDirectory + ' :' + error);
@@ -109,6 +111,7 @@ CacheDependencyManager.prototype.archiveDependencies = function (cacheDirectory,
   }
 
   function onEnd() {
+    fs.renameSync(tmpName, cachePath);
     self.cacheLogInfo('installed and archived dependencies');
     onFinally();
     callback();
@@ -117,6 +120,10 @@ CacheDependencyManager.prototype.archiveDependencies = function (cacheDirectory,
   function onFinally() {
     if (fs.existsSync(fileBackupDirectory)) {
       fs.removeSync(fileBackupDirectory);
+    }
+
+    if (fs.existsSync(tmpName)) {
+      fs.removeSync(tmpName);
     }
   }
 
