@@ -193,7 +193,7 @@ CacheDependencyManager.prototype.loadDependencies = function (callback) {
   this.cacheLogInfo('hash of ' + this.config.configPath + ': ' + hash);
   // cachePath is absolute path to where local cache of dependencies is located
   var cacheDirectory = path.resolve(this.config.cacheDirectory, this.config.cliName, this.config.getCliVersion());
-  var cachePath = path.resolve(cacheDirectory, hash + '.tar.gz');
+  var cachePath = path.resolve(cacheDirectory, hash + '.tar');
 
   // Check if local cache of dependencies exists
   if (! this.config.forceRefresh && fs.existsSync(cachePath)) {
