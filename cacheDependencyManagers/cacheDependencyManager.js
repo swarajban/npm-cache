@@ -101,7 +101,9 @@ CacheDependencyManager.prototype.archiveDependencies = function (cacheDirectory,
   // Make sure cache directory is created
   fs.mkdirsSync(cacheDirectory);
 
-  var tmpName = tmp.tmpNameSync();
+  var tmpName = tmp.tmpNameSync({
+    dir: cacheDirectory
+  });
   tmp.setGracefulCleanup();
 
   var dirDest = fsNode.createWriteStream(tmpName);
