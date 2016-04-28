@@ -32,8 +32,18 @@ var main = function () {
     .callback(reportHash)
     .help('reports the current working hash');
 
+  var defaultCacheDirectory = process.env.NPM_CACHE_DIR;
+  if (defaultCacheDirectory === undefined) {
+    var homeDirectory = process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE;
+    if (homeDirectory !== undefined) {
+      defaultCacheDirectory = path.resolve(homeDirectory, '.package_cache');
+    } else {
+      defaultCacheDirectory = path.resolve('/tmp', '.package_cache');
+    }
+  }
+
   parser.option('cacheDirectory', {
-    default: process.env.NPM_CACHE_DIR || path.resolve(process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE, '.package_cache'),
+    default: defaultCacheDirectory,
     abbr: 'c',
     help: 'directory where dependencies will be cached'
   });
