@@ -112,6 +112,9 @@ CacheDependencyManager.prototype.archiveDependencies = function (cacheDirectory,
   }
 
   function onEnd() {
+    if (fs.existsSync(cachePath)) {
+      fs.removeSync(cachePath);
+    }
     fs.renameSync(tmpName, cachePath);
     self.cacheLogInfo('installed and archived dependencies');
     onFinally();
