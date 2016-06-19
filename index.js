@@ -75,7 +75,7 @@ var main = function () {
     '\tnpm-cache install bower --allow-root composer --dry-run\t# install bower with allow-root, and composer with --dry-run',
     '\tnpm-cache install --cacheDirectory /home/cache/ bower \t# install components using /home/cache as cache directory',
     '\tnpm-cache install --forceRefresh  bower\t# force installing dependencies from package manager without cache',
-    '\tnpm-cache install --no-archive npm\t# do not compress/archive the cached dependencies',
+    '\tnpm-cache install --noArchive npm\t# do not compress/archive the cached dependencies',
     '\tnpm-cache clean\t# cleans out all cached files in cache directory',
     '\tnpm-cache hash\t# reports the current working hash'
   ];
