@@ -105,8 +105,6 @@ CacheDependencyManager.prototype.archiveDependencies = function (cacheDirectory,
   });
   tmp.setGracefulCleanup();
 
-  var dirDest = fs.createWriteStream(tmpName);
-
   function onError(error) {
     self.cacheLogError('error tar-ing ' + installedDirectory + ' :' + error);
     onFinally();
@@ -133,14 +131,15 @@ CacheDependencyManager.prototype.archiveDependencies = function (cacheDirectory,
   var installedDirectoryStream = fstream.Reader({path: installedDirectory}).on('error', onError);
 
   if (this.config.noArchive) {
-    installedDirectoryStream = installedDirectoryStream.on('end', onEnd);
+    installedDirectoryStream.on('end', onEnd)
+                            .pipe(fstream.Writer({path: tmpName, type: 'Directory'}));
   } else {
     var packer = tar.Pack({ noProprietary: true })
                     .on('error', onError)
                     .on('end', onEnd);
-    installedDirectoryStream = installedDirectoryStream.pipe(packer)
+    installedDirectoryStream.pipe(packer)
+                            .pipe(fs.createWriteStream(tmpName));
   }
-  installedDirectoryStream.pipe(fstream.Writer(cachePath));
 };
 
 CacheDependencyManager.prototype.installCachedDependencies = function (cachePath, compressedCacheExists, callback) {
@@ -240,7 +239,7 @@ CacheDependencyManager.prototype.loadDependencies = function (callback) {
     // Try to archive newly installed dependencies
     var cachePathWithInstalledDirectory = path.resolve(cachePathNotArchived, this.config.installDirectory);
       this.archiveDependencies(
-      this.config.noArchive ? cachePathWithInstalledDirectory : cacheDirectory,
+      this.config.noArchive ? cachePathNotArchived : cacheDirectory,
       this.config.noArchive ? cachePathWithInstalledDirectory : cachePathArchive,
       callback
     );
