@@ -5,12 +5,11 @@ var path = require('path');
 var logger = require('../util/logger');
 var shell = require('shelljs');
 var which = require('which');
-var tar = require('tar');
-var fsNode = require('fs');
-var fstream = require('fstream');
+var tar = require('tar-fs');
 var md5 = require('md5');
 var tmp = require('tmp');
 var _ = require('lodash');
+var zlib = require('zlib');
 
 var cacheVersion = '1';
 
@@ -106,8 +105,6 @@ CacheDependencyManager.prototype.archiveDependencies = function (cacheDirectory,
   });
   tmp.setGracefulCleanup();
 
-  var dirDest = fsNode.createWriteStream(tmpName);
-
   function onError(error) {
     self.cacheLogError('error tar-ing ' + installedDirectory + ' :' + error);
     onFinally();
@@ -131,21 +128,17 @@ CacheDependencyManager.prototype.archiveDependencies = function (cacheDirectory,
     }
   }
 
-  var packer = tar.Pack({ noProprietary: true })
-                  .on('error', onError)
-                  .on('end', onEnd);
-
-  fstream.Reader({path: installedDirectory})
-         .on('error', onError)
-         .pipe(packer)
-         .pipe(dirDest);
+  tar.pack(installedDirectory)
+   .pipe(zlib.createGzip())
+   .pipe(fs.createWriteStream(tmpName))
+   .on('error', onError)
+   .on('finish', onEnd);
 };
 
 CacheDependencyManager.prototype.extractDependencies = function (cachePath, callback) {
   var self = this;
   var installDirectory = getAbsolutePath(this.config.installDirectory);
   var fileBackupDirectory = getFileBackupPath(installDirectory);
-  var targetPath = path.dirname(installDirectory);
   this.cacheLogInfo('clearing installed dependencies at ' + installDirectory);
   fs.removeSync(installDirectory);
   this.cacheLogInfo('...cleared');
@@ -164,13 +157,11 @@ CacheDependencyManager.prototype.extractDependencies = function (cachePath, call
     callback();
   }
 
-  var extractor = tar.Extract({path: targetPath})
-                     .on('error', onError)
-                     .on('end', onEnd);
-
   fs.createReadStream(cachePath)
+    .pipe(zlib.createGunzip())
+    .pipe(tar.extract(installDirectory))
     .on('error', onError)
-    .pipe(extractor);
+    .on('finish', onEnd);
 };
 
 
