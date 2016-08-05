@@ -222,6 +222,17 @@ CacheDependencyManager.prototype.loadDependencies = function (callback) {
     );
 
   } else { // install dependencies with CLI tool and cache
+    // clear invalid cache before install dependencies
+    if (this.config.clearInvalidCache) {
+      var clearCommand = 'npm-cache clean --cacheDirectory ' + this.config.cacheDirectory;
+      this.cacheLogInfo('clearing invalid cache at ' + this.config.cacheDirectory);
+      if (shell.exec(clearCommand).code !== 0) {
+        error = 'error running ' + clearCommand;
+        this.cacheLogError(error);
+      } else {
+        this.cacheLogInfo('...cleared');
+      }
+    }
 
     // Try to install dependencies using package manager
     error = this.installDependencies();
