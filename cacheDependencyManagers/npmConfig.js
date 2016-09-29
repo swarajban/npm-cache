@@ -25,7 +25,8 @@ function getFileHash(filePath) {
   var json = JSON.parse(fs.readFileSync(filePath));
   return md5(JSON.stringify({
     dependencies: json.dependencies,
-    devDependencies: json.devDependencies
+    devDependencies: json.devDependencies,
+    environment: process.env.NODE_ENV
   }));
 }
 
