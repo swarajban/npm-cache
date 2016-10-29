@@ -156,6 +156,7 @@ var cleanCache = function (opts) {
 
   // Get all *.tar.gz files recursively in cache directory
   var candidateFileNames = glob.sync(opts.cacheDirectory + '/**/*.tar.gz');
+  // cb363b7c2e0343e21fbc21c25f16c705
 
   // Filter out unlikely npm-cached files (non-md5 file names)
   var md5Regexp = /\/[0-9a-f]{32}\.tar\.gz/i;

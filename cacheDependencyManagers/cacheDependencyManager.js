@@ -5,11 +5,12 @@ var path = require('path');
 var logger = require('../util/logger');
 var shell = require('shelljs');
 var which = require('which');
-var tar = require('tar');
+var tar = require('tar-fs');
 var fstream = require('fstream');
 var md5 = require('md5');
 var tmp = require('tmp');
 var _ = require('lodash');
+var zlib = require('zlib');
 
 var cacheVersion = '1';
 
@@ -132,16 +133,18 @@ CacheDependencyManager.prototype.archiveDependencies = function (cacheDirectory,
   }
 
   var installedDirectoryStream = fstream.Reader({path: installedDirectory}).on('error', onError);
-
+  // TODO: speed this up
   if (this.config.noArchive) {
-    installedDirectoryStream.on('end', onEnd)
-                            .pipe(fstream.Writer({path: tmpName, type: 'Directory'}));
+    installedDirectoryStream
+      .on('end', onEnd)
+      .pipe(fstream.Writer({path: tmpName, type: 'Directory'}));
+
   } else {
-    var packer = tar.Pack({ noProprietary: true })
-                    .on('error', onError)
-                    .on('end', onEnd);
-    installedDirectoryStream.pipe(packer)
-                            .pipe(fs.createWriteStream(tmpName));
+    tar.pack(installedDirectory)
+      .pipe(zlib.createGzip())
+      .pipe(fs.createWriteStream(tmpName))
+      .on('error', onError)
+      .on('finish', onEnd);
   }
 };
 
@@ -169,13 +172,11 @@ CacheDependencyManager.prototype.installCachedDependencies = function (cachePath
   }
 
   if (compressedCacheExists) {
-    var extractor = tar.Extract({path: targetPath})
-        .on('error', onError)
-        .on('end', onEnd);
-
     fs.createReadStream(cachePath)
-        .on('error', onError)
-        .pipe(extractor);
+      .pipe(zlib.createGunzip())
+      .pipe(tar.extract(installDirectory))
+      .on('error', onError)
+      .on('finish', onEnd);
   } else {
     fstream.Reader(cachePath)
         .on('error', onError)
