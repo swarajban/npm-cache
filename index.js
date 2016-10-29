@@ -47,6 +47,11 @@ var main = function () {
     abbr: 'c',
     help: 'directory where dependencies will be cached'
   });
+  parser.option('noArchive', {
+    abbr: 'd',
+    help: 'when installing a new dependency set, those dependencies will be stored uncompressed. This requires more disk space but notably increases performance',
+    flag: true
+  });
 
   parser.option('version', {
     abbr: 'v',
@@ -70,6 +75,7 @@ var main = function () {
     '\tnpm-cache install bower --allow-root composer --dry-run\t# install bower with allow-root, and composer with --dry-run',
     '\tnpm-cache install --cacheDirectory /home/cache/ bower \t# install components using /home/cache as cache directory',
     '\tnpm-cache install --forceRefresh  bower\t# force installing dependencies from package manager without cache',
+    '\tnpm-cache install --noArchive npm\t# do not compress/archive the cached dependencies',
     '\tnpm-cache clean\t# cleans out all cached files in cache directory',
     '\tnpm-cache hash\t# reports the current working hash'
   ];
@@ -105,6 +111,7 @@ var installDependencies = function (opts) {
       var managerConfig = require(availableManagers[managerName]);
       managerConfig.cacheDirectory = opts.cacheDirectory;
       managerConfig.forceRefresh = opts.forceRefresh;
+      managerConfig.noArchive = opts.noArchive;
       managerConfig.installOptions = managerArguments[managerName];
       var manager = new CacheDependencyManager(managerConfig);
       manager.loadDependencies(callback);

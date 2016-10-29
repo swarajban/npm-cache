@@ -44,6 +44,7 @@ npm-cache install bower npm	# install bower and npm components
 npm-cache install bower --allow-root composer --dry-run	# install bower with allow-root, and composer with --dry-run
 npm-cache install --cacheDirectory /home/cache/  bower 	# install components using /home/cache as cache directory
 npm-cache install --forceRefresh  bower	# force installing dependencies from package manager without cache
+npm-cache install --noArchive  npm	# installs dependencies and caches them without compressing
 npm-cache clean	# cleans out all cached files in cache directory
 ```
 
