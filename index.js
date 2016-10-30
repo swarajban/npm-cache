@@ -5,7 +5,7 @@ var fs = require('fs-extra');
 var path = require('path');
 var parser = require('nomnom');
 var async = require('async');
-var glob = require('glob');
+var rimraf = require('rimraf');
 
 var logger = require('./util/logger');
 var ParseUtils = require('./util/parseUtils');
@@ -150,27 +150,48 @@ var reportHash = function (opts) {
   );
 };
 
+
+// Recursively lists files in directory up to maxDepth
+var cachedFileListHelper = function (dir, fileList, regex, currDepth, maxDepth) {
+  if (currDepth === maxDepth) {
+    return fileList;
+  }
+
+  var dirFiles = fs.readdirSync(dir);
+  dirFiles.forEach(
+    function (file) {
+      var filePath = path.join(dir, file);
+      if (regex.test(filePath)) {
+        fileList.push(filePath);
+      }
+
+      if (fs.statSync(filePath).isDirectory()) {
+        cachedFileListHelper(filePath, fileList, regex, currDepth + 1, maxDepth);
+      }
+    }
+  );
+  return fileList;
+};
+
+// Returns list of candidate cached files
+var getCachedFileList = function (baseDir) {
+  var cacheRegex = /[0-9a-f]{32}[\.tar\.gz]*$/i;
+  return cachedFileListHelper(baseDir, [], cacheRegex, 0, 3);
+};
+
 // Removes all cached dependencies from cache directory
 var cleanCache = function (opts) {
   prepareCacheDirectory(opts.cacheDirectory);
 
-  // Get all *.tar.gz files recursively in cache directory
-  var candidateFileNames = glob.sync(opts.cacheDirectory + '/**/*.tar.gz');
-  // cb363b7c2e0343e21fbc21c25f16c705
-
-  // Filter out unlikely npm-cached files (non-md5 file names)
-  var md5Regexp = /\/[0-9a-f]{32}\.tar\.gz/i;
-  var cachedFiles = candidateFileNames.filter(
-    function isCachedFile (fileName) {
-      return md5Regexp.test(fileName);
+  var cachedFileList = getCachedFileList(opts.cacheDirectory);
+  cachedFileList.forEach(
+    function (filePath) {
+      rimraf.sync(filePath);
+      // fs.unlinkSync(filePath);
     }
   );
 
-  // Now delete all cached files!
-  cachedFiles.forEach(function (fileName) {
-    fs.unlinkSync(fileName);
-  });
-  logger.logInfo('cleaned ' + cachedFiles.length + ' files from cache directory');
+  logger.logInfo('cleaned ' + cachedFileList.length + ' files from cache directory');
 };
 
 
