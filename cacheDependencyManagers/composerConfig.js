@@ -51,7 +51,7 @@ var getCliVersion = function () {
   var versionString = shell.exec('composer --version', {silent: true}).output;
   // Example below:
   //    Composer version 1.0.0-alpha9 2014-12-07 17:15:20
-  var versionRegex = /^Composer version (\S+)/;
+  var versionRegex = /Composer version (\S+)/;
   var result = versionRegex.exec(versionString);
   if (result !== null) {
     version = result[1];
