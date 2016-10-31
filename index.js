@@ -52,6 +52,11 @@ var main = function () {
     help: 'when installing a new dependency set, those dependencies will be stored uncompressed. This requires more disk space but notably increases performance',
     flag: true
   });
+  parser.option('symlink', {
+    abbr: 's',
+    help: 'use symlink cached modules copying mode',
+    flag: true
+  });
 
   parser.option('version', {
     abbr: 'v',
@@ -112,6 +117,7 @@ var installDependencies = function (opts) {
       managerConfig.cacheDirectory = opts.cacheDirectory;
       managerConfig.forceRefresh = opts.forceRefresh;
       managerConfig.noArchive = opts.noArchive;
+      managerConfig.symlink = opts.symlink;
       managerConfig.installOptions = managerArguments[managerName];
       var manager = new CacheDependencyManager(managerConfig);
       manager.loadDependencies(callback);
