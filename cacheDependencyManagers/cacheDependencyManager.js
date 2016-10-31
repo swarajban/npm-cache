@@ -45,6 +45,18 @@ CacheDependencyManager.prototype.installDependencies = function () {
   var error = null;
   var installCommand = this.config.installCommand + ' ' + this.config.installOptions;
   installCommand = installCommand.trim();
+
+  // existing symlink needs to be removed before installing or "mkdir" exception will happen during further installing
+  var installDirectory = getAbsolutePath(this.config.installDirectory);
+  try {
+      if (fs.lstatSync(installDirectory).isSymbolicLink()) {
+        this.cacheLogInfo('removing existing symlink ' + installDirectory + ' before install action');
+        fs.removeSync(installDirectory);
+      }
+  } catch (e) {
+    // NOOP
+  }
+
   this.cacheLogInfo('running [' + installCommand + ']...');
   if (shell.exec(installCommand).code !== 0) {
     error = 'error running ' + this.config.installCommand;
@@ -148,15 +160,15 @@ CacheDependencyManager.prototype.archiveDependencies = function (cacheDirectory,
   }
 };
 
-CacheDependencyManager.prototype.installCachedDependencies = function (cachePath, compressedCacheExists, callback) {
+CacheDependencyManager.prototype.installCachedDependencies = function (paths, compressedCacheExists, callback) {
   var self = this;
+  var cachePath = paths.cachePath;
   var installDirectory = getAbsolutePath(this.config.installDirectory);
   var fileBackupDirectory = getFileBackupPath(installDirectory);
   var targetPath = path.dirname(installDirectory);
   this.cacheLogInfo('clearing installed dependencies at ' + installDirectory);
   fs.removeSync(installDirectory);
   this.cacheLogInfo('...cleared');
-  this.cacheLogInfo('retrieving dependencies from ' + cachePath);
 
   function onError(error) {
     self.cacheLogError('Error retrieving ' + cachePath + ': ' + error);
@@ -167,9 +179,51 @@ CacheDependencyManager.prototype.installCachedDependencies = function (cachePath
       self.restoreFile(fileBackupDirectory, self.config.addToArchiveAndRestore);
       fs.removeSync(fileBackupDirectory);
     }
-    self.cacheLogInfo('done extracting');
+    self.cacheLogInfo('done ' + (self.config.symlink ? 'symlinking' : 'extracting'));
     callback();
   }
+  function symlink() {
+    cachePath = paths.cachePathWithInstalledDirectory;
+    self.cacheLogInfo('symlinking dependencies from ' + cachePath);
+
+    fs.symlink(cachePath, installDirectory, function(error) {
+      if (error) {
+        return onError(error);
+      }
+      onEnd();
+    });
+  }
+
+  if (this.config.symlink) {
+    var cachePathWithInstalledDirectoryExists = false;
+
+    try {
+      var stat = fs.statSync(paths.cachePathWithInstalledDirectory);
+      cachePathWithInstalledDirectoryExists = stat.isDirectory();
+    } catch (e) {
+      this.cacheLogInfo('no unpacked cache directory ' + paths.cachePathWithInstalledDirectory + ' found');
+    }
+
+    if (!cachePathWithInstalledDirectoryExists) {
+      this.cacheLogInfo('unpacking existing cache archive ' + paths.cachePathArchive + ' to ' + paths.cachePathNotArchived + ' for further symlinking operations');
+
+      fs.createReadStream(paths.cachePathArchive)
+          .pipe(zlib.createGunzip())
+          .pipe(tar.extract(paths.cachePathWithInstalledDirectory))
+          .on('error', function (error) {
+            self.cacheLogError('Error extracting ' + paths.cachePathArchive + ' archive to ' + paths.cachePathNotArchived + ': ' + error);
+            callback(error);
+          })
+          .on('finish', symlink);
+
+      return;
+    }
+
+    symlink();
+    return;
+  }
+
+  this.cacheLogInfo('retrieving dependencies from ' + cachePath);
 
   if (compressedCacheExists) {
     fs.createReadStream(cachePath)
@@ -218,6 +272,7 @@ CacheDependencyManager.prototype.loadDependencies = function (callback) {
   var cacheDirectory = path.resolve(this.config.cacheDirectory, this.config.cliName, this.config.getCliVersion());
   var cachePathArchive = path.resolve(cacheDirectory, hash + '.tar.gz');
   var cachePathNotArchived = path.resolve(cacheDirectory, hash);
+  var cachePathWithInstalledDirectory = path.resolve(cachePathNotArchived, this.config.installDirectory);
 
   // Check if local cache of dependencies exists
   var cacheArchiveExists = fs.existsSync(cachePathArchive);
@@ -227,7 +282,12 @@ CacheDependencyManager.prototype.loadDependencies = function (callback) {
 
     // Try to retrieve cached dependencies
     this.installCachedDependencies(
-      cacheArchiveExists ? cachePathArchive : cachePathNotArchived,
+      {
+        cachePath: cacheArchiveExists ? cachePathArchive : cachePathNotArchived,
+        cachePathArchive: cachePathArchive,
+        cachePathNotArchived: cachePathNotArchived,
+        cachePathWithInstalledDirectory: cachePathWithInstalledDirectory
+      },
       cacheArchiveExists,
       callback
     );
@@ -241,8 +301,7 @@ CacheDependencyManager.prototype.loadDependencies = function (callback) {
     }
 
     // Try to archive newly installed dependencies
-    var cachePathWithInstalledDirectory = path.resolve(cachePathNotArchived, this.config.installDirectory);
-      this.archiveDependencies(
+    this.archiveDependencies(
       this.config.noArchive ? cachePathNotArchived : cacheDirectory,
       this.config.noArchive ? cachePathWithInstalledDirectory : cachePathArchive,
       callback
