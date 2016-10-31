@@ -10,7 +10,7 @@ var fstream = require('fstream');
 var md5 = require('md5');
 var tmp = require('tmp');
 var _ = require('lodash');
-var zlib = require('zlib');
+// var zlib = require('zlib');
 
 var cacheVersion = '1';
 
@@ -140,8 +140,14 @@ CacheDependencyManager.prototype.archiveDependencies = function (cacheDirectory,
       .pipe(fstream.Writer({path: tmpName, type: 'Directory'}));
 
   } else {
-    tar.pack(installedDirectory)
-      .pipe(zlib.createGzip())
+    tar.pack(installedDirectory, {
+        map: function(header) {
+          // keep archive directory structure compatible with previously created archives, backward compatibility
+          header.name = self.config.installDirectory + '/' + header.name;
+          return header
+        }
+      })
+      //.pipe(zlib.createGzip())
       .pipe(fs.createWriteStream(tmpName))
       .on('error', onError)
       .on('finish', onEnd);
@@ -173,8 +179,8 @@ CacheDependencyManager.prototype.installCachedDependencies = function (cachePath
 
   if (compressedCacheExists) {
     fs.createReadStream(cachePath)
-      .pipe(zlib.createGunzip())
-      .pipe(tar.extract(installDirectory))
+      //.pipe(zlib.createGunzip())
+      .pipe(tar.extract(targetPath))
       .on('error', onError)
       .on('finish', onEnd);
   } else {
