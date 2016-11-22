@@ -5,6 +5,7 @@ exports.logError = function (errorMessage) {
 };
 
 exports.logInfo = function (message) {
-  console.log('[npm-cache] [INFO] ' + message);
+    var date = new Date();
+    console.log('[npm-cache] [INFO] ' + date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds() + ' ' + message);
 };
 
