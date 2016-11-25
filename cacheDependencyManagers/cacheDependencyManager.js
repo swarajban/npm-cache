@@ -238,7 +238,7 @@ CacheDependencyManager.prototype.loadDependencies = function (callback) {
   // Check if local cache of dependencies exists
   var cacheArchiveExists = fs.existsSync(cachePathArchive);
   var cacheNotArchivedExists = fs.existsSync(cachePathNotArchived);
-  if (!this.config.forceRefresh && (cacheArchiveExists || cacheNotArchivedExists)) {
+  if (!this.config.forceRefresh && ((!this.config.noArchive && cacheArchiveExists) || (this.config.noArchive && cacheNotArchivedExists))) {
     this.cacheLogInfo('cache exists');
 
     // Try to retrieve cached dependencies
