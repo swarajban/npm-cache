@@ -206,11 +206,10 @@ CacheDependencyManager.prototype.installCachedDependencies = function (cachePath
         .on('end', onEnd)
         .pipe(fstream.Writer(targetPath));
     } else {
-      var targetPathSymLink = targetPath + "\\node_modules"
-      var cachePathSymLink = cachePath + "\\node_modules"
-      this.cacheLogInfo('creating symlink ' + targetPathSymLink + ' to point to ' + cachePathSymLink);
+      var cachePathSymLink = path.resolve(cachePath, 'node_modules')
+      this.cacheLogInfo('creating symlink ' + installDirectory + ' to point to ' + cachePathSymLink);
       //'dir' requires admin rights on windows, junction works. This argument is ignored by other platforms
-      fs.symlinkSync(cachePathSymLink, targetPathSymLink, 'junction')
+      fs.symlinkSync(cachePathSymLink, installDirectory, 'junction')
     }
   }
 };
