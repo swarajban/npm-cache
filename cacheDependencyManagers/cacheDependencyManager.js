@@ -45,6 +45,14 @@ CacheDependencyManager.prototype.installDependencies = function () {
   var error = null;
   var installCommand = this.config.installCommand + ' ' + this.config.installOptions;
   installCommand = installCommand.trim();
+  //deleting symlink if it exists
+  var installedDirectory = getAbsolutePath(this.config.installDirectory);
+  if (fs.lstatSync(installedDirectory).isSymbolicLink()) {
+    this.cacheLogInfo('install directory ' + installedDirectory + ' exists already and is a symlink');
+    fs.removeSync(installedDirectory);
+  } else {
+      this.cacheLogInfo('install directory ' + installedDirectory + ' dont already exist');
+  }
   this.cacheLogInfo('running [' + installCommand + ']...');
   if (shell.exec(installCommand).code !== 0) {
     error = 'error running ' + this.config.installCommand;
@@ -156,7 +164,7 @@ CacheDependencyManager.prototype.installCachedDependencies = function (cachePath
   this.cacheLogInfo('clearing installed dependencies at ' + installDirectory);
   fs.removeSync(installDirectory);
   this.cacheLogInfo('...cleared');
-  this.cacheLogInfo('retrieving dependencies from ' + cachePath);
+  this.cacheLogInfo('retrieving dependencies from ' + cachePath + ' to ' + targetPath);
 
   function onError(error) {
     self.cacheLogError('Error retrieving ' + cachePath + ': ' + error);
@@ -171,17 +179,25 @@ CacheDependencyManager.prototype.installCachedDependencies = function (cachePath
     callback();
   }
 
-  if (compressedCacheExists) {
+  if (compressedCacheExists && !this.config.useSymlink) {
     fs.createReadStream(cachePath)
       .pipe(zlib.createGunzip())
       .pipe(tar.extract(installDirectory))
       .on('error', onError)
       .on('finish', onEnd);
   } else {
-    fstream.Reader(cachePath)
+    if (!this.config.useSymlink) {
+      fstream.Reader(cachePath)
         .on('error', onError)
         .on('end', onEnd)
         .pipe(fstream.Writer(targetPath));
+    } else {
+      var targetPathSymLink = targetPath + "\\node_modules"
+      var cachePathSymLink = cachePath + "\\node_modules"
+      this.cacheLogInfo('creating symlink ' + targetPathSymLink + ' to point to ' + cachePathSymLink);
+      //'dir' requires admin rights on windows, junction works. This argument is ignored by other platforms
+      fs.symlinkSync(cachePathSymLink, targetPathSymLink, 'junction')
+    }
   }
 };
 
@@ -227,7 +243,7 @@ CacheDependencyManager.prototype.loadDependencies = function (callback) {
 
     // Try to retrieve cached dependencies
     this.installCachedDependencies(
-      cacheArchiveExists ? cachePathArchive : cachePathNotArchived,
+      (cacheArchiveExists && !this.config.useSymlink) ? cachePathArchive : cachePathNotArchived,
       cacheArchiveExists,
       callback
     );
