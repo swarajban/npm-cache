@@ -47,11 +47,11 @@ CacheDependencyManager.prototype.installDependencies = function () {
   installCommand = installCommand.trim();
   //deleting symlink if it exists
   var installedDirectory = getAbsolutePath(this.config.installDirectory);
-  if (fs.lstatSync(installedDirectory).isSymbolicLink()) {
+  if (fs.existsSync(installedDirectory) && fs.lstatSync(installedDirectory).isSymbolicLink()) {
     this.cacheLogInfo('install directory ' + installedDirectory + ' exists already and is a symlink');
     fs.removeSync(installedDirectory);
   } else {
-      this.cacheLogInfo('install directory ' + installedDirectory + ' dont already exist');
+      this.cacheLogInfo('install directory ' + installedDirectory + ' dont already exist or is not a symlink');
   }
   this.cacheLogInfo('running [' + installCommand + ']...');
   if (shell.exec(installCommand).code !== 0) {
@@ -126,6 +126,15 @@ CacheDependencyManager.prototype.archiveDependencies = function (cacheDirectory,
     }
     fs.renameSync(tmpName, cachePath);
     self.cacheLogInfo('installed and archived dependencies');
+
+    if(self.config.useSymlink) {
+      console.log('creating symlink to have ' + installedDirectory + ' to point to ' + cachePath)
+        //'dir' requires admin rights on windows, junction works. This argument is ignored by other platforms
+        fs.symlinkSync(cachePath, installedDirectory, 'junction')
+    } else {
+        console.log('not creating symlink')
+    }
+
     onFinally();
     callback();
   }
@@ -141,8 +150,13 @@ CacheDependencyManager.prototype.archiveDependencies = function (cacheDirectory,
   }
 
   var installedDirectoryStream = fstream.Reader({path: installedDirectory}).on('error', onError);
+  if(this.config.useSymlink) {
+    self.cacheLogInfo('moving ' + installedDirectory + ' to ' + tmpName);
+    fs.renameSync(installedDirectory, tmpName)
+    onEnd()
+  }
   // TODO: speed this up
-  if (this.config.noArchive) {
+  else if (this.config.noArchive) {
     installedDirectoryStream
       .on('end', onEnd)
       .pipe(fstream.Writer({path: tmpName, type: 'Directory'}));
