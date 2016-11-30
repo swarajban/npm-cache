@@ -48,10 +48,10 @@ CacheDependencyManager.prototype.installDependencies = function () {
   //deleting symlink if it exists
   var installedDirectory = getAbsolutePath(this.config.installDirectory);
   if (fs.existsSync(installedDirectory) && fs.lstatSync(installedDirectory).isSymbolicLink()) {
-    this.cacheLogInfo('install directory ' + installedDirectory + ' exists already and is a symlink');
+    this.cacheLogInfo('install directory ' + installedDirectory + ' exists already and is a symlink - removing it');
     fs.removeSync(installedDirectory);
   } else {
-      this.cacheLogInfo('install directory ' + installedDirectory + ' dont already exist or is not a symlink');
+      this.cacheLogInfo('install directory ' + installedDirectory + ' dont already exist or is not a symlink - dont remove it');
   }
   this.cacheLogInfo('running [' + installCommand + ']...');
   if (shell.exec(installCommand).code !== 0) {
@@ -129,8 +129,16 @@ CacheDependencyManager.prototype.archiveDependencies = function (cacheDirectory,
 
     if(self.config.useSymlink) {
       console.log('creating symlink to have ' + installedDirectory + ' to point to ' + cachePath)
-        //'dir' requires admin rights on windows, junction works. This argument is ignored by other platforms
-        fs.symlinkSync(cachePath, installedDirectory, 'junction')
+      //'dir' requires admin rights on windows, junction works. This argument is ignored by other platforms
+      fs.symlinkSync(cachePath, installedDirectory, 'junction')
+
+      //some modules might need to find files based on a relative path which can be a problem, so we need to create a reverse symlink
+      if (this.config.reverseSymlink) {
+        var reverseCacheSymLink = path.resolve(cachePath, '../', this.config.reverseSymlink)
+        var projectDirectory = path.resolve(installDirectory, '../')
+        this.cacheLogInfo('creating reverse symlink ' + reverseCacheSymLink + ' to point to ' + projectDirectory);
+        fs.symlinkSync(projectDirectory, reverseCacheSymLink, 'junction')
+      }
     } else {
         console.log('not creating symlink')
     }
@@ -210,6 +218,14 @@ CacheDependencyManager.prototype.installCachedDependencies = function (cachePath
       this.cacheLogInfo('creating symlink ' + installDirectory + ' to point to ' + cachePathSymLink);
       //'dir' requires admin rights on windows, junction works. This argument is ignored by other platforms
       fs.symlinkSync(cachePathSymLink, installDirectory, 'junction')
+
+      //some modules might need to find files based on a relative path which can be a problem, so we need to create a reverse symlink
+      if (this.config.reverseSymlink) {
+        var reverseCacheSymLink = path.resolve(cachePath, '../', this.config.reverseSymlink)
+        var projectDirectory = path.resolve(installDirectory, '../')
+        this.cacheLogInfo('creating reverse symlink ' + reverseCacheSymLink + ' to point to ' + projectDirectory);
+        fs.symlinkSync(projectDirectory, reverseCacheSymLink, 'junction')
+      }
     }
   }
 };

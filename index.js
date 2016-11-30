@@ -57,6 +57,10 @@ var main = function () {
     help: 'when using previously cached dependencies, create a symbolic link instead of copying all the files. Must be used with. This enforce the noArchive option',
     flag: true
   });
+  parser.option('reverseSymlink', {
+    abbr: 'a',
+    help: 'when using symlinks, create a reverse symlink to allow modules in the cache directory to find files in the project directory',
+  });
 
   parser.option('version', {
     abbr: 'v',
@@ -118,6 +122,7 @@ var installDependencies = function (opts) {
       managerConfig.forceRefresh = opts.forceRefresh;
       managerConfig.noArchive = opts.noArchive || opts.useSymlink;
       managerConfig.useSymlink = opts.useSymlink;
+      managerConfig.reverseSymlink = opts.reverseSymlink;
       managerConfig.installOptions = managerArguments[managerName];
       var manager = new CacheDependencyManager(managerConfig);
       manager.loadDependencies(callback);
