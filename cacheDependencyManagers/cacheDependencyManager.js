@@ -136,6 +136,10 @@ CacheDependencyManager.prototype.archiveDependencies = function (cacheDirectory,
       if (this.config.reverseSymlink) {
         var reverseCacheSymLink = path.resolve(cachePath, '../', this.config.reverseSymlink)
         var projectDirectory = path.resolve(installDirectory, '../')
+        if (fs.existsSync(reverseCacheSymLink) && fs.lstatSync(reverseCacheSymLink).isSymbolicLink()) {
+          this.cacheLogInfo(reverseCacheSymLink + ' exists already and is a symlink - removing it');
+          fs.removeSync(reverseCacheSymLink);
+        }
         this.cacheLogInfo('creating reverse symlink ' + reverseCacheSymLink + ' to point to ' + projectDirectory);
         fs.symlinkSync(projectDirectory, reverseCacheSymLink, 'junction')
       }
@@ -223,6 +227,10 @@ CacheDependencyManager.prototype.installCachedDependencies = function (cachePath
       if (this.config.reverseSymlink) {
         var reverseCacheSymLink = path.resolve(cachePath, '../', this.config.reverseSymlink)
         var projectDirectory = path.resolve(installDirectory, '../')
+        if (fs.existsSync(reverseCacheSymLink) && fs.lstatSync(reverseCacheSymLink).isSymbolicLink()) {
+          this.cacheLogInfo(reverseCacheSymLink + ' exists already and is a symlink - removing it');
+          fs.removeSync(reverseCacheSymLink);
+        }
         this.cacheLogInfo('creating reverse symlink ' + reverseCacheSymLink + ' to point to ' + projectDirectory);
         fs.symlinkSync(projectDirectory, reverseCacheSymLink, 'junction')
       }
