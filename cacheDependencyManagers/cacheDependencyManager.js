@@ -47,11 +47,16 @@ CacheDependencyManager.prototype.installDependencies = function () {
   installCommand = installCommand.trim();
   //deleting symlink if it exists
   var installedDirectory = getAbsolutePath(this.config.installDirectory);
-  if (fs.existsSync(installedDirectory) && fs.lstatSync(installedDirectory).isSymbolicLink()) {
-    this.cacheLogInfo('install directory ' + installedDirectory + ' exists already and is a symlink - removing it');
-    fs.removeSync(installedDirectory);
-  } else {
+  //using a try to test if there is a symlink to be deleted: fs.existsSync(installedDirectory) returns false if the symlink doesn't point to anything
+  try {
+    if (fs.lstatSync(installedDirectory).isSymbolicLink()) {
+      this.cacheLogInfo('install directory ' + installedDirectory + ' exists already and is a symlink - removing it');
+      fs.removeSync(installedDirectory);
+    } else {
       this.cacheLogInfo('install directory ' + installedDirectory + ' dont already exist or is not a symlink - dont remove it');
+    }
+  } catch(err) {
+    this.cacheLogInfo('install directory ' + installedDirectory + ' dont already exist or is not a symlink - dont remove it');
   }
   this.cacheLogInfo('running [' + installCommand + ']...');
   if (shell.exec(installCommand).code !== 0) {
@@ -133,14 +138,14 @@ CacheDependencyManager.prototype.archiveDependencies = function (cacheDirectory,
       fs.symlinkSync(cachePath, installedDirectory, 'junction')
 
       //some modules might need to find files based on a relative path which can be a problem, so we need to create a reverse symlink
-      if (this.config.reverseSymlink) {
-        var reverseCacheSymLink = path.resolve(cachePath, '../', this.config.reverseSymlink)
-        var projectDirectory = path.resolve(installDirectory, '../')
+      if (self.config.reverseSymlink) {
+        var reverseCacheSymLink = path.resolve(cachePath, '../', self.config.reverseSymlink)
+        var projectDirectory = path.resolve(installedDirectory, '../')
         if (fs.existsSync(reverseCacheSymLink) && fs.lstatSync(reverseCacheSymLink).isSymbolicLink()) {
-          this.cacheLogInfo(reverseCacheSymLink + ' exists already and is a symlink - removing it');
+          self.cacheLogInfo(reverseCacheSymLink + ' exists already and is a symlink - removing it');
           fs.removeSync(reverseCacheSymLink);
         }
-        this.cacheLogInfo('creating reverse symlink ' + reverseCacheSymLink + ' to point to ' + projectDirectory);
+        self.cacheLogInfo('creating reverse symlink ' + reverseCacheSymLink + ' to point to ' + projectDirectory);
         fs.symlinkSync(projectDirectory, reverseCacheSymLink, 'junction')
       }
     } else {
