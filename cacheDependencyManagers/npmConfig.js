@@ -29,6 +29,15 @@ function getFileHash(filePath) {
   }));
 }
 
+function getNpmPostCachedInstallCommand() {
+  var packagePath = path.resolve(process.cwd(), 'package.json');
+  var json = JSON.parse(fs.readFileSync(packagePath));
+  if (json.scripts.prepublish)
+    return 'npm run prepublish';
+  else
+    return null;
+}
+
 module.exports = {
   cliName: 'npm',
   getCliVersion: function getNpmVersion () {
@@ -37,5 +46,6 @@ module.exports = {
   configPath: getNpmConfigPath(),
   installDirectory: 'node_modules',
   installCommand: 'npm install',
+  postCachedInstallCommand: getNpmPostCachedInstallCommand(),
   getFileHash: getFileHash
 };
