@@ -1,7 +1,7 @@
 {
-  "name": "npm-cache-flow",
-  "version": "0.6.6",
-  "description": "cache dependency manager installs to local machine - respects commandline args and deals with npm --production args etc.",
+  "name": "npm-cache",
+  "version": "0.1",
+  "description": "cache dependency manager installs to local machine - fork of npm-cache by swaraj - respects commandline args and deals with npm --production args etc.",
   "main": "index.js",
   "repository": {
     "type": "git",
@@ -50,6 +50,6 @@
   },
   "preferGlobal": true,
   "bin": {
-    "npm-cache-flow": "index.js"
+    "npm-cache": "index.js"
   }
 }
