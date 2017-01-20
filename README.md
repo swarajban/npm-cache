@@ -1,5 +1,6 @@
-npm-cache
+npm-cache-flow
 =========
+npm-cache-flow is a fork of npm-cache from dashlane that supports arg flowthrough - only targetd version in this instance is npm your mileage may vary with the other packagers.
 
 `npm-cache` is a command line utility that caches dependencies installed via `npm`, `bower`, `jspm` and `composer`.
 
