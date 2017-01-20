@@ -1,6 +1,6 @@
 {
   "name": "npm-cache",
-  "version": "0.1",
+  "version": "0.1.0",
   "description": "cache dependency manager installs to local machine - fork of npm-cache by swaraj - respects commandline args and deals with npm --production args etc.",
   "main": "index.js",
   "repository": {
