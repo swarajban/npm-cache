@@ -2,7 +2,7 @@
 'use strict';
 
 var fs = require('fs-extra');
-var path = require('path');
+var path = require('upath');
 var parser = require('nomnom');
 var async = require('async');
 var rimraf = require('rimraf');

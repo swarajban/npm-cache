@@ -39,7 +39,8 @@
     "shelljs": "0.5.3",
     "tar-fs": "1.14.0",
     "tmp": "^0.0.28",
-    "which": "^1.2.0"
+    "which": "^1.2.0",
+    "upath":"^0.2.0"
   },
   "preferGlobal": true,
   "bin": {
