@@ -17,6 +17,10 @@ build process. Since dependencies don't change often, this often means slower bu
 helps alleviate this problem by caching previously installed dependencies on the build machine. 
 `npm-cache` can be a drop-in replacement for any build script that runs `[npm|bower|composer|jspm] install`. 
 
+In order to speed up even more the build process, a --useSymlink option has been added: when first installing the
+dependencies, it copy them without archiving them, and on a subsequent build, it just create a symbolic link in 
+your project to point to the cached dependencies. Doing so, "npm install" actually takes less than 1 sec.
+
 ## How it Works
 When you run `npm-cache install [npm|bower|jspm|composer|yarn]`, it first looks for `package.json`, `bower.json`,
 or `composer.json` in the current working directory depending on which dependency manager is requested.
@@ -53,6 +57,7 @@ npm-cache install bower --allow-root composer --dry-run
    npm-cache install --cacheDirectory /home/cache/ bower    # install components using /home/cache as cache directory
    npm-cache install --forceRefresh  bower  # force installing dependencies from package manager without cache
    npm-cache install --noArchive npm    # do not compress/archive the cached dependencies
+   npm-cache install --useSymlink yarn # do not compress the cached dependencies, and when installing dependencies from cache, create a symlink instead of copying files
    npm-cache install npm --production -msvs_version=2013    # add args to npm installer
    npm-cache install npm --production -msvs_version=2013 bower --silent # add args to npm installer and bower
    npm-cache clean  # cleans out all cached files in cache directory
