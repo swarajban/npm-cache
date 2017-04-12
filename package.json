@@ -1,11 +1,11 @@
 {
   "name": "npm-cache",
-  "version": "0.1.0",
+  "version": "0.6.5",
   "description": "cache dependency manager installs to local machine - fork of npm-cache by swaraj - respects commandline args and deals with npm --production args etc.",
   "main": "index.js",
   "repository": {
     "type": "git",
-    "url": "git://github.com/klh/npm-cache.git"
+    "url": "git://github.com/Dashlane/npm-cache.git"
   },
   "keywords": [
     "npm",
@@ -22,9 +22,13 @@
       "name": "Aaron Nordyke",
       "email": "aaron.nordyke@gmail.com"
     },
-        {
+    {
       "name": "Klaus Hougesen",
       "email": "Klaus.Hougesen@gmail.com"
+    },
+    {
+      "name": "Guillaume Maron",
+      "email": "guillaume.maron@gmail.com"
     }
   ],
   "license": "MIT",
