@@ -2,7 +2,7 @@
 'use strict';
 
 var fs = require('fs-extra');
-var path = require('path');
+var path = require('upath');
 var parser = require('nomnom');
 var async = require('async');
 var rimraf = require('rimraf');
@@ -81,10 +81,11 @@ var main = function () {
     '\tnpm-cache install\t# try to install npm, bower, and composer components',
     '\tnpm-cache install bower\t# install only bower components',
     '\tnpm-cache install bower npm\t# install bower and npm components',
-    '\tnpm-cache install bower --allow-root composer --dry-run\t# install bower with allow-root, and composer with --dry-run',
     '\tnpm-cache install --cacheDirectory /home/cache/ bower \t# install components using /home/cache as cache directory',
     '\tnpm-cache install --forceRefresh  bower\t# force installing dependencies from package manager without cache',
     '\tnpm-cache install --noArchive npm\t# do not compress/archive the cached dependencies',
+    '\tnpm-cache install npm --production -msvs_version=2013\t# add args to npm installer',
+    '\tnpm-cache install npm --production -msvs_version=2013 bower --silent\t# add args to npm installer and bower',
     '\tnpm-cache clean\t# cleans out all cached files in cache directory',
     '\tnpm-cache hash\t# reports the current working hash'
   ];
@@ -129,7 +130,7 @@ var installDependencies = function (opts) {
     },
     function onInstalled (error) {
       if (error === null) {
-        logger.logInfo('successfully installed all dependencies');
+        logger.logSuccess('successfully installed all dependencies');
         process.exit(0);
       } else {
         logger.logError('error installing dependencies');
@@ -156,7 +157,6 @@ var reportHash = function (opts) {
       managerConfig.cacheDirectory = opts.cacheDirectory;
 
       var hash = managerConfig.getFileHash(managerConfig.configPath);
-      console.log(hash);
     }
   );
 };

@@ -5,22 +5,43 @@ var shell = require('shelljs');
 var fs = require('fs');
 var md5 = require('md5');
 var logger = require('../util/logger');
+var isUsingYarnLock = null;
 
 
 // Returns path to configuration file for yarn. Uses
 // yarn.lock
 var getYarnConfigPath = function () {
-  return path.resolve(process.cwd(), 'yarn.lock');
+  var yarnLockPath = path.resolve(process.cwd(), 'yarn.lock');
+  var packageJsonPath = path.resolve(process.cwd(), 'package.json');
+
+  if (isUsingYarnLock === null) {
+      if (fs.existsSync(yarnLockPath)) {
+          logger.logInfo('[yarn] using yarn.lock instead of package.json');
+          isUsingYarnLock = true;
+      }  else {
+          isUsingYarnLock = false;
+      }
+  }
+
+  return isUsingYarnLock ? yarnLockPath : packageJsonPath;
 };
 
 function getFileHash(filePath) {
-  var yarnlockfile = fs.readFileSync(filePath);
-  return md5(yarnlockfile);
+  if (isUsingYarnLock) {
+      var yarnlockfile = fs.readFileSync(filePath);
+      return md5(yarnlockfile);
+  } else {
+      var json = JSON.parse(fs.readFileSync(filePath));
+      return md5(JSON.stringify({
+          dependencies: json.dependencies,
+          devDependencies: json.devDependencies
+      }));
+  }
 }
 
 module.exports = {
   cliName: 'yarn',
-  getCliVersion: function getNpmVersion () {
+  getCliVersion: function getYarnVersion () {
     return shell.exec('yarn --version', {silent: true}).output.trim();
   },
   configPath: getYarnConfigPath(),
