@@ -1,5 +1,14 @@
 npm-cache
 =========
+this npm-cache is a fork of npm-cache from dashlane that supports arg flowthrough and creates more robust hashes to avoid using wrong hash  tar - only the npm version is targeted in this instance...your mileage may vary with the other packagers.
+Hash is created by globbing devdependencies, dependencies and installOptions.
+
+this can also be used to create environment specific hash tarballs (on a build server)
+
+for instance
+`npm-cache install npm --production --bserver01`
+would create a different hash tarball than
+`npm-cache install npm --production --bserver02`
 
 `npm-cache` is a command line utility that caches dependencies installed via `npm`, `bower`, `jspm`, `composer` and `yarn`.
 
@@ -38,14 +47,16 @@ npm-cache install bower --allow-root composer --dry-run
 
 ## Examples
 ```bash
-npm-cache install	# try to install npm, bower, and composer components
-npm-cache install bower	# install only bower components
-npm-cache install bower npm	# install bower and npm components
-npm-cache install bower --allow-root composer --dry-run	# install bower with allow-root, and composer with --dry-run
-npm-cache install --cacheDirectory /home/cache/  bower 	# install components using /home/cache as cache directory
-npm-cache install --forceRefresh  bower	# force installing dependencies from package manager without cache
-npm-cache install --noArchive  npm	# installs dependencies and caches them without compressing
-npm-cache clean	# cleans out all cached files in cache directory
+   npm-cache install    # try to install npm, bower, and composer components
+   npm-cache install bower  # install only bower components
+   npm-cache install bower npm  # install bower and npm components
+   npm-cache install --cacheDirectory /home/cache/ bower    # install components using /home/cache as cache directory
+   npm-cache install --forceRefresh  bower  # force installing dependencies from package manager without cache
+   npm-cache install --noArchive npm    # do not compress/archive the cached dependencies
+   npm-cache install npm --production -msvs_version=2013    # add args to npm installer
+   npm-cache install npm --production -msvs_version=2013 bower --silent # add args to npm installer and bower
+   npm-cache clean  # cleans out all cached files in cache directory
+   npm-cache hash   # reports the current working hash
 ```
 
 ## Contributing
