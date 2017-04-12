@@ -12,18 +12,18 @@ var isUsingYarnLock = null;
 // yarn.lock
 var getYarnConfigPath = function () {
   var yarnLockPath = path.resolve(process.cwd(), 'yarn.lock');
-  var npmJsonPath = path.resolve(process.cwd(), 'package.json');
+  var packageJsonPath = path.resolve(process.cwd(), 'package.json');
 
   if (isUsingYarnLock === null) {
       if (fs.existsSync(yarnLockPath)) {
-          logger.logInfo('[yarn] using yarn.lock instead of composer.json');
+          logger.logInfo('[yarn] using yarn.lock instead of package.json');
           isUsingYarnLock = true;
       }  else {
           isUsingYarnLock = false;
       }
   }
 
-  return isUsingYarnLock ? yarnLockPath : npmJsonPath;
+  return isUsingYarnLock ? yarnLockPath : packageJsonPath;
 };
 
 function getFileHash(filePath) {
@@ -41,7 +41,7 @@ function getFileHash(filePath) {
 
 module.exports = {
   cliName: 'yarn',
-  getCliVersion: function getNpmVersion () {
+  getCliVersion: function getYarnVersion () {
     return shell.exec('yarn --version', {silent: true}).output.trim();
   },
   configPath: getYarnConfigPath(),
