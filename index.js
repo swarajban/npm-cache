@@ -6,6 +6,7 @@ var path = require('upath');
 var parser = require('nomnom');
 var async = require('async');
 var rimraf = require('rimraf');
+var util = require('util')
 
 var logger = require('./util/logger');
 var ParseUtils = require('./util/parseUtils');
@@ -61,6 +62,11 @@ var main = function () {
     abbr: 'a',
     help: 'when using symlinks, create a reverse symlink to allow modules in the cache directory to find files in the project directory',
   });
+  parser.option('cleanOldCachedDepsSince', {
+    default: 0,
+    abbr: 'o',
+    help: 'cleaning automatically old cached deps - enter a number of days to clean cached deps not used since more than x days',
+  });
 
   parser.option('version', {
     abbr: 'v',
@@ -110,7 +116,11 @@ var prepareCacheDirectory = function (cacheDirectory) {
 // main method for installing specified dependencies
 var installDependencies = function (opts) {
   prepareCacheDirectory(opts.cacheDirectory);
-
+  
+  if (opts.cleanOldCachedDepsSince) {
+    cleanCache(opts);
+  }
+  
   var availableManagers = CacheDependencyManager.getAvailableManagers();
   var managerArguments = ParseUtils.getManagerArgs();
   var managers = Object.keys(managerArguments);
@@ -195,14 +205,32 @@ var cleanCache = function (opts) {
   prepareCacheDirectory(opts.cacheDirectory);
 
   var cachedFileList = getCachedFileList(opts.cacheDirectory);
+  var cachedFolderCleaned = 0;
   cachedFileList.forEach(
     function (filePath) {
-      rimraf.sync(filePath);
-      // fs.unlinkSync(filePath);
+      
+      var mustCleanFolder = true;
+
+      //prevent cleaning cache deps if cleanOldCachedDepsSince has been specified and the cached deps are recent
+      if (opts.cleanOldCachedDepsSince) {
+        var stats = fs.lstatSync(filePath);
+        var mtime = new Date(util.inspect(stats.mtime));
+        var daysElapsed = (new Date() - mtime)/1000/60/60/24;
+        logger.logInfo(filePath + ' is ' + daysElapsed + ' days old');
+        if (daysElapsed < opts.cleanOldCachedDepsSince) {
+          mustCleanFolder = false;
+        }
+      }
+
+      if (mustCleanFolder) {
+        logger.logInfo("cleaning " + filePath);
+        cachedFolderCleaned++;
+        rimraf.sync(filePath);
+      }
     }
   );
 
-  logger.logInfo('cleaned ' + cachedFileList.length + ' files from cache directory');
+  logger.logInfo('cleaned ' + cachedFolderCleaned + ' files from cache directory');
 };
 
 
