@@ -202,6 +202,9 @@ CacheDependencyManager.prototype.installCachedDependencies = function (cachePath
   this.cacheLogInfo('...cleared');
   this.cacheLogInfo('retrieving dependencies from ' + cachePath + ' to ' + targetPath);
 
+  //update last modified date of cachePath to know we used that archive
+  fs.utimesSync(cachePath, Date.now()/1000, Date.now()/1000);
+
   function onError(error) {
     self.cacheLogError('Error retrieving ' + cachePath + ': ' + error);
     callback(error);
