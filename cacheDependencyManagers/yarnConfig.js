@@ -39,6 +39,15 @@ function getFileHash(filePath) {
   }
 }
 
+function getYarnPostCachedInstallCommand() {
+  var packagePath = path.resolve(process.cwd(), 'package.json');
+  var json = JSON.parse(fs.readFileSync(packagePath));
+  if (json.scripts.prepublish)
+    return 'npm run prepublish';
+  else
+    return null;
+}
+
 module.exports = {
   cliName: 'yarn',
   getCliVersion: function getYarnVersion () {
@@ -47,5 +56,6 @@ module.exports = {
   configPath: getYarnConfigPath(),
   installDirectory: 'node_modules',
   installCommand: 'yarn',
-  getFileHash: getFileHash
+  getFileHash: getFileHash,
+  postCachedInstallCommand: getYarnPostCachedInstallCommand()
 };

@@ -19,6 +19,9 @@ dependencies are installed, `npm-cache` tars the newly downloaded dependencies a
 cache directory. The next time `npm-cache` runs and sees the same config file, it will find the tarball
 in the cache directory and untar the dependencies in the current working directory.
 
+Upon installing cached dependencies, for npm & yarn, it launches "npm run prepublish" for npm <= 4 (starting npm 5, npm
+ stop launching npm run prepublish upon npm install - to be followed up for yarn)
+
 ## Advanced features
 
 ### No archive
