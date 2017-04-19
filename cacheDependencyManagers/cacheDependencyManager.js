@@ -49,7 +49,21 @@ CacheDependencyManager.prototype.installDependencies = function () {
   var error = null;
   var installCommand = this.config.installCommand + ' ' + this.config.installOptions;
   installCommand = installCommand.trim();
+  //deleting symlink if it exists
+  var installedDirectory = getAbsolutePath(this.config.installDirectory);
+  //using a try to test if there is a symlink to be deleted: fs.existsSync(installedDirectory) returns false if the symlink doesn't point to anything
+  try {
+    if (fs.lstatSync(installedDirectory).isSymbolicLink()) {
+      this.cacheLogInfo('install directory ' + installedDirectory + ' exists already and is a symlink - removing it');
+      fs.removeSync(installedDirectory);
+    } else {
+      this.cacheLogInfo('install directory ' + installedDirectory + ' dont already exist or is not a symlink - dont remove it');
+    }
+  } catch(err) {
+    this.cacheLogInfo('install directory ' + installedDirectory + ' dont already exist or is not a symlink - dont remove it');
+  }
   this.cacheLogRunning('running [' + installCommand + ']');
+
   if (shell.exec(installCommand).code !== 0) {
     error = 'error running ' + this.config.installCommand;
     this.cacheLogError(error);
@@ -122,6 +136,27 @@ CacheDependencyManager.prototype.archiveDependencies = function (cacheDirectory,
     }
     fs.renameSync(tmpName, cachePath);
     self.cacheLogInfo('installed and archived dependencies');
+
+    if(self.config.useSymlink) {
+      console.log('creating symlink to have ' + installedDirectory + ' to point to ' + cachePath)
+      //'dir' requires admin rights on windows, junction works. This argument is ignored by other platforms
+      fs.symlinkSync(cachePath, installedDirectory, 'junction')
+
+      //some modules might need to find files based on a relative path which can be a problem, so we need to create a reverse symlink
+      if (self.config.reverseSymlink) {
+        var reverseCacheSymLink = path.resolve(cachePath, '../', self.config.reverseSymlink)
+        var projectDirectory = path.resolve(installedDirectory, '../')
+        if (fs.existsSync(reverseCacheSymLink) && fs.lstatSync(reverseCacheSymLink).isSymbolicLink()) {
+          self.cacheLogInfo(reverseCacheSymLink + ' exists already and is a symlink - removing it');
+          fs.removeSync(reverseCacheSymLink);
+        }
+        self.cacheLogInfo('creating reverse symlink ' + reverseCacheSymLink + ' to point to ' + projectDirectory);
+        fs.symlinkSync(projectDirectory, reverseCacheSymLink, 'junction')
+      }
+    } else {
+        console.log('not creating symlink')
+    }
+
     onFinally();
     callback();
   }
@@ -137,8 +172,13 @@ CacheDependencyManager.prototype.archiveDependencies = function (cacheDirectory,
   }
 
   var installedDirectoryStream = fstream.Reader({path: installedDirectory}).on('error', onError);
+  if(this.config.useSymlink) {
+    self.cacheLogInfo('moving ' + installedDirectory + ' to ' + tmpName);
+    fs.renameSync(installedDirectory, tmpName)
+    onEnd()
+  }
   // TODO: speed this up
-  if (this.config.noArchive) {
+  else if (this.config.noArchive) {
     installedDirectoryStream
       .on('end', onEnd)
       .pipe(fstream.Writer({path: tmpName, type: 'Directory'}));
@@ -160,7 +200,7 @@ CacheDependencyManager.prototype.installCachedDependencies = function (cachePath
   this.cacheLogInfo('clearing installed dependencies at ' + installDirectory);
   fs.removeSync(installDirectory);
   this.cacheLogInfo('...cleared');
-  this.cacheLogInfo('retrieving dependencies from ' + cachePath);
+  this.cacheLogInfo('retrieving dependencies from ' + cachePath + ' to ' + targetPath);
 
   function onError(error) {
     self.cacheLogError('Error retrieving ' + cachePath + ': ' + error);
@@ -175,17 +215,36 @@ CacheDependencyManager.prototype.installCachedDependencies = function (cachePath
     callback();
   }
 
-  if (compressedCacheExists) {
+  if (compressedCacheExists && !this.config.useSymlink) {
     fs.createReadStream(cachePath)
       .pipe(zlib.createGunzip())
       .pipe(tar.extract(installDirectory))
       .on('error', onError)
       .on('finish', onEnd);
   } else {
-    fstream.Reader(cachePath)
+    if (!this.config.useSymlink) {
+      fstream.Reader(cachePath)
         .on('error', onError)
         .on('end', onEnd)
         .pipe(fstream.Writer(targetPath));
+    } else {
+      var cachePathSymLink = path.resolve(cachePath, 'node_modules')
+      this.cacheLogInfo('creating symlink ' + installDirectory + ' to point to ' + cachePathSymLink);
+      //'dir' requires admin rights on windows, junction works. This argument is ignored by other platforms
+      fs.symlinkSync(cachePathSymLink, installDirectory, 'junction')
+
+      //some modules might need to find files based on a relative path which can be a problem, so we need to create a reverse symlink
+      if (this.config.reverseSymlink) {
+        var reverseCacheSymLink = path.resolve(cachePath, '../', this.config.reverseSymlink)
+        var projectDirectory = path.resolve(installDirectory, '../')
+        if (fs.existsSync(reverseCacheSymLink) && fs.lstatSync(reverseCacheSymLink).isSymbolicLink()) {
+          this.cacheLogInfo(reverseCacheSymLink + ' exists already and is a symlink - removing it');
+          fs.removeSync(reverseCacheSymLink);
+        }
+        this.cacheLogInfo('creating reverse symlink ' + reverseCacheSymLink + ' to point to ' + projectDirectory);
+        fs.symlinkSync(projectDirectory, reverseCacheSymLink, 'junction')
+      }
+    }
   }
 };
 
@@ -227,12 +286,12 @@ CacheDependencyManager.prototype.loadDependencies = function (callback) {
   // Check if local cache of dependencies exists
   var cacheArchiveExists = fs.existsSync(cachePathArchive);
   var cacheNotArchivedExists = fs.existsSync(cachePathNotArchived);
-  if (!this.config.forceRefresh && (cacheArchiveExists || cacheNotArchivedExists)) {
+  if (!this.config.forceRefresh && ((!this.config.noArchive && cacheArchiveExists) || (this.config.noArchive && cacheNotArchivedExists))) {
     this.cacheLogInfo('cache exists');
 
     // Try to retrieve cached dependencies
     this.installCachedDependencies(
-      cacheArchiveExists ? cachePathArchive : cachePathNotArchived,
+      (cacheArchiveExists && !this.config.useSymlink) ? cachePathArchive : cachePathNotArchived,
       cacheArchiveExists,
       callback
     );
