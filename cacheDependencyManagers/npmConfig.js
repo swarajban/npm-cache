@@ -6,6 +6,8 @@ var fs = require('fs');
 var md5 = require('md5');
 var logger = require('../util/logger');
 
+//buffer clientVersion retrieving as it takes significant time
+var npmVersion = undefined;
 
 // Returns path to configuration file for npm. Uses
 // npm-shrinkwrap.json if it exists; otherwise,
@@ -45,13 +47,42 @@ function getFileHash(filePath, installOptions) {
 		return md5Hash;
 }
 
+function getNpmPostCachedInstallCommand() {
+	var npmMajorVersion = getNpmMajorVersion();
+
+	//npm run prepublish is only called for npm <= 4
+	if (npmMajorVersion <= 4) {
+		var packagePath = path.resolve(process.cwd(), 'package.json');
+		var json = JSON.parse(fs.readFileSync(packagePath));
+		if (json.scripts.prepublish)
+			return 'npm run prepublish';
+	}
+
+  return null;
+}
+
+function getNpmVersion() {
+	if (npmVersion === undefined) {
+		npmVersion = shell.exec('npm --version', {silent: true}).output.trim();
+	}
+	return npmVersion;
+}
+
+function getNpmMajorVersion() {
+	var npmMajorVersion = getNpmVersion();
+	var pointPosition = npmMajorVersion.indexOf('.');
+	if (pointPosition != -1) {
+		npmMajorVersion = npmMajorVersion.substring(0,pointPosition);
+	}
+	return npmMajorVersion;
+}
+
 module.exports = {
 		cliName: 'npm',
-		getCliVersion: function getNpmVersion() {
-				return shell.exec('npm --version', {silent: true}).output.trim();
-		},
+		getCliVersion: getNpmVersion,
 		configPath: getNpmConfigPath(),
 		installDirectory: 'node_modules',
 		installCommand: 'npm install',
-		getFileHash: getFileHash
+		getFileHash: getFileHash,
+		postCachedInstallCommand: getNpmPostCachedInstallCommand()
 };

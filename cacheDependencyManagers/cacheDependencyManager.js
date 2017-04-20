@@ -215,6 +215,18 @@ CacheDependencyManager.prototype.installCachedDependencies = function (cachePath
       fs.removeSync(fileBackupDirectory);
     }
     self.cacheLogInfo('done extracting');
+
+    if (self.config.postCachedInstallCommand) {
+      self.cacheLogInfo('launching post cached install command: ' + self.config.postCachedInstallCommand);
+      var postCachedInstallCommand = self.config.postCachedInstallCommand.trim();
+      if (shell.exec(postCachedInstallCommand).code !== 0) {
+          error = 'error running ' + self.config.postCachedInstallCommand;
+          self.cacheLogError(error);
+      } else {
+          self.cacheLogInfo('post cached installed command (' + self.config.postCachedInstallCommand + ') done for ' + self.config.cliName);
+      }
+    }
+
     callback();
   }
 
@@ -247,6 +259,8 @@ CacheDependencyManager.prototype.installCachedDependencies = function (cachePath
         this.cacheLogInfo('creating reverse symlink ' + reverseCacheSymLink + ' to point to ' + projectDirectory);
         fs.symlinkSync(projectDirectory, reverseCacheSymLink, 'junction')
       }
+
+      onEnd()
     }
   }
 };
