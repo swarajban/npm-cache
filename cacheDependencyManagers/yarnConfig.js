@@ -21,7 +21,6 @@ module.exports = {
     },
     configPath: 'yarn.lock',
     installDirectory: 'node_modules',
-    addToArchiveAndRestore: 'yarn.lock',
     installCommand: 'yarn',
     getFileHash: function() {
         return md5(getFileContents('yarn.lock'));
