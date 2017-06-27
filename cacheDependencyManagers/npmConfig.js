@@ -6,10 +6,17 @@ var fs = require('fs');
 var md5 = require('md5');
 var logger = require('../util/logger');
 
+function getNpmMajorVersion() {
+    return parseInt(getNpmVersion().split(/\./)[0] || 0, 10);
+}
+
+function getNpmVersion() {
+    return shell.exec('npm --version', {silent: true}).output.trim();
+}
 
 // Returns path to configuration file for npm. Uses
 // - npm-shrinkwrap.json if it exists; otherwise,
-// - package-lock.json if it exists; otherwise,
+// - package-lock.json if it exists and npm >= 5; otherwise,
 // - defaults to package.json
 var getNpmConfigPath = function () {
   var shrinkWrapPath = path.resolve(process.cwd(), 'npm-shrinkwrap.json');
@@ -17,11 +24,13 @@ var getNpmConfigPath = function () {
     logger.logInfo('[npm] using npm-shrinkwrap.json instead of package.json');
     return shrinkWrapPath;
   }
-  
-  var packageLockPath = path.resolve(process.cwd(), 'package-lock.json');
-  if (fs.existsSync(packageLockPath)) {
-    logger.logInfo('[npm] using package-lock.json instead of package.json');
-    return packageLockPath;
+
+  if (getNpmMajorVersion() >= 5) {
+      var packageLockPath = path.resolve(process.cwd(), 'package-lock.json');
+      if (fs.existsSync(packageLockPath)) {
+          logger.logInfo('[npm] using package-lock.json instead of package.json');
+          return packageLockPath;
+      }
   }
 
   var packagePath = path.resolve(process.cwd(), 'package.json');
@@ -38,9 +47,7 @@ function getFileHash(filePath) {
 
 module.exports = {
   cliName: 'npm',
-  getCliVersion: function getNpmVersion () {
-    return shell.exec('npm --version', {silent: true}).output.trim();
-  },
+  getCliVersion: getNpmVersion,
   configPath: getNpmConfigPath(),
   installDirectory: 'node_modules',
   installCommand: 'npm install',
