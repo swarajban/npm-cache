@@ -47,10 +47,24 @@ var main = function () {
     abbr: 'c',
     help: 'directory where dependencies will be cached'
   });
+
   parser.option('noArchive', {
     abbr: 'd',
     help: 'when installing a new dependency set, those dependencies will be stored uncompressed. This requires more disk space but notably increases performance',
     flag: true
+  });
+
+  parser.option('skipDirectories', {
+    abbr: "s",
+    help: "packages/directories name regex pattern to skip (usefull when some dependecies are commited to the VCS)",
+    callback: function(pattern){
+        //validate Regex pattern
+        try{
+            var regex = new RegExp(pattern); 
+        } catch(e) {
+            return e.message;
+        }
+    }
   });
 
   parser.option('version', {
@@ -113,6 +127,7 @@ var installDependencies = function (opts) {
       managerConfig.forceRefresh = opts.forceRefresh;
       managerConfig.noArchive = opts.noArchive;
       managerConfig.installOptions = managerArguments[managerName];
+      managerConfig.skipPackagesMask = opts.skipDirectories;
       var manager = new CacheDependencyManager(managerConfig);
       manager.loadDependencies(callback);
     },
