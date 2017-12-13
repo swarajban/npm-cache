@@ -11,7 +11,6 @@ var md5 = require('md5');
 var tmp = require('tmp');
 var _ = require('lodash');
 var zlib = require('zlib');
-var rimraf = require('rimraf');
 
 var cacheVersion = '1';
 
@@ -139,6 +138,7 @@ CacheDependencyManager.prototype.archiveDependencies = function (cacheDirectory,
     installedDirectoryStream
       .on('end', onEnd)
       .pipe(fstream.Writer({path: tmpName, type: 'Directory'}));
+
   } else {
     tar.pack(installedDirectory)
       .pipe(zlib.createGzip())
@@ -148,36 +148,13 @@ CacheDependencyManager.prototype.archiveDependencies = function (cacheDirectory,
   }
 };
 
-CacheDependencyManager.prototype.cleanInstallDirectory = function(installDirectory){
-  var self = this;
-  if(this.config.skipPackagesMask) {
-    var regex = new RegExp(this.config.skipPackagesMask); 
-    this.cacheLogInfo('exclusion mask is ' + regex);  
-    var dirFiles = fs.readdirSync(installDirectory);
-    dirFiles.forEach(
-        function(file) {
-            var filePath = path.join(installDirectory, file);
-            if (fs.statSync(filePath).isDirectory()) {
-              if(regex.test(file)){
-                self.cacheLogInfo('Skip by exclusion mask: ' + filePath);                  
-              } else {
-                rimraf.sync(filePath);
-              }
-            }
-        }
-    );  
-  } else {
-    rimraf.sync(installDirectory);
-  }
-}
-
 CacheDependencyManager.prototype.installCachedDependencies = function (cachePath, compressedCacheExists, callback) {
   var self = this;
   var installDirectory = getAbsolutePath(this.config.installDirectory);
   var fileBackupDirectory = getFileBackupPath(installDirectory);
   var targetPath = path.dirname(installDirectory);
-  this.cacheLogInfo('clearing installed dependencies at ' + installDirectory);  
-  this.cleanInstallDirectory(installDirectory);
+  this.cacheLogInfo('clearing installed dependencies at ' + installDirectory);
+  fs.removeSync(installDirectory);
   this.cacheLogInfo('...cleared');
   this.cacheLogInfo('retrieving dependencies from ' + cachePath);
 
