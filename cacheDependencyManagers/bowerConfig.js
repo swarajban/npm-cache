@@ -5,6 +5,7 @@ var shell = require('shelljs');
 var fs = require('fs');
 var md5 = require('md5');
 var logger = require('../util/logger');
+var options = {};
 
 var getBowerInstallDirectory = function () {
   var bowerComponentLocation = 'bower_components';
@@ -30,6 +31,13 @@ function getFileHash(filePath) {
   }));
 };
 
+function setOptions(opts) {
+	if (!opts) {
+		return;
+	}
+	options = Object.assign(options, opts);
+}
+
 module.exports = {
   cliName: 'bower',
   getCliVersion: function getNpmVersion () {
@@ -38,5 +46,6 @@ module.exports = {
   configPath: path.resolve(process.cwd(), 'bower.json'),
   installDirectory: getBowerInstallDirectory(),
   installCommand: 'bower install',
-  getFileHash: getFileHash
+  getFileHash: getFileHash,
+  setOptions: setOptions
 };

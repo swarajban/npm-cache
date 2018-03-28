@@ -8,6 +8,7 @@ var logger = require('../util/logger');
 
 //buffer clientVersion retrieving as it takes significant time
 var npmVersion = undefined;
+var options = {};
 
 function getNpmMajorVersion() {
     return parseInt(getNpmVersion().split(/\./)[0] || 0, 10);
@@ -90,12 +91,24 @@ function getNpmMajorVersion() {
 	return npmMajorVersion;
 }
 
+function getInstallCommand() {
+	return options.ci ? 'npm ci' : 'npm install';
+}
+
+function setOptions(opts) {
+	if (!opts) {
+		return;
+	}
+	options = Object.assign(options, opts);
+}
+
 module.exports = {
   cliName: 'npm',
   getCliVersion: getNpmVersion,
   configPath: getNpmConfigPath(),
   installDirectory: 'node_modules',
-  installCommand: 'npm install',
+  installCommand: getInstallCommand,
 	getFileHash: getFileHash,
-	postCachedInstallCommand: getNpmPostCachedInstallCommand()
+	postCachedInstallCommand: getNpmPostCachedInstallCommand(),
+	setOptions: setOptions
 };

@@ -47,7 +47,11 @@ CacheDependencyManager.prototype.cacheLogError = function (error) {
 
 CacheDependencyManager.prototype.installDependencies = function () {
   var error = null;
-  var installCommand = this.config.installCommand + ' ' + this.config.installOptions;
+  var getInstallCommand = typeof this.config.installCommand === 'function' ?
+    this.config.installCommand :
+    function () { return this.config.installCommand; };
+
+  var installCommand = getInstallCommand() + ' ' + this.config.installOptions;
   installCommand = installCommand.trim();
   //deleting symlink if it exists
   var installedDirectory = getAbsolutePath(this.config.installDirectory);

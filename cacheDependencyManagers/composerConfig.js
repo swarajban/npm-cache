@@ -6,6 +6,7 @@ var shell = require('shelljs');
 var logger = require('../util/logger');
 var md5 = require('md5');
 var isUsingComposerLock = null;
+var options = {};
 
 // Returns path to configuration file for composer. Uses
 // composer.lock if it exists; otherwise,
@@ -75,11 +76,19 @@ function getFileHash(filePath) {
   }));
 };
 
+function setOptions(opts) {
+	if (!opts) {
+		return;
+	}
+	options = Object.assign(options, opts);
+}
+
 module.exports = {
   cliName: 'composer',
   getCliVersion: getCliVersion,
   configPath: getComposerConfigPath(),
   installDirectory: getComposerInstallDirectory(),
   installCommand: 'composer install',
-  getFileHash: getFileHash
+  getFileHash: getFileHash,
+  setOptions: setOptions
 };

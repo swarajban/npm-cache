@@ -6,7 +6,7 @@ var fs = require('fs');
 var md5 = require('md5');
 var logger = require('../util/logger');
 var isUsingYarnLock = null;
-
+var options = {};
 
 // Returns path to configuration file for yarn. Uses
 // yarn.lock
@@ -48,6 +48,13 @@ function getYarnPostCachedInstallCommand() {
     return null;
 }
 
+function setOptions(opts) {
+	if (!opts) {
+		return;
+	}
+	options = Object.assign(options, opts);
+}
+
 module.exports = {
   cliName: 'yarn',
   getCliVersion: function getYarnVersion () {
@@ -57,5 +64,6 @@ module.exports = {
   installDirectory: 'node_modules',
   installCommand: 'yarn',
   getFileHash: getFileHash,
-  postCachedInstallCommand: getYarnPostCachedInstallCommand()
+  postCachedInstallCommand: getYarnPostCachedInstallCommand(),
+  setOptions: setOptions
 };

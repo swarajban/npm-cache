@@ -53,6 +53,11 @@ var main = function () {
     help: 'when installing a new dependency set, those dependencies will be stored uncompressed. This requires more disk space but notably increases performance',
     flag: true
   });
+  parser.option('ci', {
+    abbr: 'j',
+    help: 'only works with npm. whether to run npm ci or npm install',
+    flag: true
+  });
   parser.option('useSymlink', {
     abbr: 's',
     help: 'when using previously cached dependencies, create a symbolic link instead of copying all the files. Must be used with. This enforce the noArchive option',
@@ -90,6 +95,7 @@ var main = function () {
     '\tnpm-cache install --cacheDirectory /home/cache/ bower \t# install components using /home/cache as cache directory',
     '\tnpm-cache install --forceRefresh  bower\t# force installing dependencies from package manager without cache',
     '\tnpm-cache install --noArchive npm\t# do not compress/archive the cached dependencies',
+    '\tnpm-cache install --ci npm\t# uses npm ci to install dependencies',
     '\tnpm-cache install npm --production -msvs_version=2013\t# add args to npm installer',
     '\tnpm-cache install npm --production -msvs_version=2013 bower --silent\t# add args to npm installer and bower',
     '\tnpm-cache clean\t# cleans out all cached files in cache directory',
@@ -116,11 +122,11 @@ var prepareCacheDirectory = function (cacheDirectory) {
 // main method for installing specified dependencies
 var installDependencies = function (opts) {
   prepareCacheDirectory(opts.cacheDirectory);
-  
+
   if (opts.cleanOldCachedDepsSince) {
     cleanCache(opts);
   }
-  
+
   var availableManagers = CacheDependencyManager.getAvailableManagers();
   var managerArguments = ParseUtils.getManagerArgs();
   var managers = Object.keys(managerArguments);
@@ -135,6 +141,7 @@ var installDependencies = function (opts) {
       managerConfig.useSymlink = opts.useSymlink;
       managerConfig.reverseSymlink = opts.reverseSymlink;
       managerConfig.installOptions = managerArguments[managerName];
+      managerConfig.setOptions({ci: opts.ci});
       var manager = new CacheDependencyManager(managerConfig);
       manager.loadDependencies(callback);
     },
@@ -208,7 +215,7 @@ var cleanCache = function (opts) {
   var cachedFolderCleaned = 0;
   cachedFileList.forEach(
     function (filePath) {
-      
+
       var mustCleanFolder = true;
 
       //prevent cleaning cache deps if cleanOldCachedDepsSince has been specified and the cached deps are recent
