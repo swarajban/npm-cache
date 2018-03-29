@@ -49,7 +49,7 @@ CacheDependencyManager.prototype.installDependencies = function () {
   var error = null;
   var getInstallCommand = typeof this.config.installCommand === 'function' ?
     this.config.installCommand :
-    function () { return this.config.installCommand; };
+    function () { return this.config.installCommand; }.bind(this);
 
   var installCommand = getInstallCommand() + ' ' + this.config.installOptions;
   installCommand = installCommand.trim();

@@ -112,7 +112,7 @@ function setOptions(opts) {
 	if (!opts) {
 		return;
 	}
-	options = Object.assign(options, opts);
+	Object.assign(options, opts);
 }
 
 module.exports = {
