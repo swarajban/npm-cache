@@ -41,16 +41,33 @@ CacheDependencyManager.prototype.cacheLogError = function (error) {
 };
 
 
-CacheDependencyManager.prototype.installDependencies = function () {
+CacheDependencyManager.prototype.installDependencies = function (hash, cacheDirectory, cachePathNotArchived) {
     var error = null;
     var installCommand = this.config.installCommand + ' ' + this.config.installOptions;
     installCommand = installCommand.trim();
+    var installDirectory = getAbsolutePath(this.config.installDirectory);
+
+    if (this.config.createSymlink) {
+        var targetDirectory = cachePathNotArchived + '/' + this.config.installDirectory;
+
+        fs.mkdirsSync(cachePathNotArchived);
+        fs.mkdirsSync(targetDirectory);
+
+        this.cacheLogInfo('symlink install folder ' + targetDirectory + ' to ' + installDirectory);
+        try {
+            fs.symlinkSync(targetDirectory, installDirectory);
+        } catch (e) {
+            error = e;
+        }
+    }
+
     this.cacheLogInfo('running [' + installCommand + ']...');
     if (shell.exec(installCommand).code !== 0) {
         error = 'error running ' + this.config.installCommand;
         this.cacheLogError(error);
     } else {
-        this.cacheLogInfo('installed ' + this.config.cliName + ' dependencies, now archiving');
+        this.cacheLogInfo('installed ' + this.config.cliName + ' dependencies' +
+            (this.config.createSymlink ? '' : ', now archiving'));
     }
     return error;
 };
@@ -199,7 +216,6 @@ CacheDependencyManager.prototype.installCachedDependencies = function (cachePath
 
 
 CacheDependencyManager.prototype.loadDependencies = function (callback) {
-    var self = this;
     var error = null;
 
     // Check if config file for dependency manager exists
@@ -246,19 +262,21 @@ CacheDependencyManager.prototype.loadDependencies = function (callback) {
 
     } else { // install dependencies with CLI tool and cache
         // Try to install dependencies using package manager
-        error = this.installDependencies();
+        error = this.installDependencies(hash, cacheDirectory, cachePathNotArchived);
         if (error !== null) {
             callback(error);
             return;
         }
 
-        // Try to archive newly installed dependencies
         var cachePathWithInstalledDirectory = path.resolve(cachePathNotArchived, this.config.installDirectory);
-        this.archiveDependencies(
-            this.config.noArchive ? cachePathNotArchived : cacheDirectory,
-            this.config.noArchive ? cachePathWithInstalledDirectory : cachePathArchive,
-            callback
-        );
+        // Try to archive newly installed dependencies
+        if (!this.config.createSymlink) {
+            this.archiveDependencies(
+                this.config.noArchive ? cachePathNotArchived : cacheDirectory,
+                this.config.noArchive ? cachePathWithInstalledDirectory : cachePathArchive,
+                callback
+            );
+        }
     }
 };
 
