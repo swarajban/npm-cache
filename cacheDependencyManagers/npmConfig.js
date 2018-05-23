@@ -33,8 +33,7 @@ var getNpmConfigPath = function () {
       }
   }
 
-  var packagePath = path.resolve(process.cwd(), 'package.json');
-  return packagePath;
+  return path.resolve(process.cwd(), 'package.json');
 };
 
 function getFileHash(filePath) {

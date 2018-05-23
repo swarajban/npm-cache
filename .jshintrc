@@ -17,5 +17,6 @@
   "freeze": true,
   "nonew": true,
   "smarttabs": false,
-  "node": true
+  "node": true,
+  "esversion": 5
 }

@@ -5,8 +5,4 @@ node_modules
 
 # IntelliJ Project Files
 .idea/
-npm-cache.iml
-
-
-# Tmp Directory
-tmp/
+package-lock.json
