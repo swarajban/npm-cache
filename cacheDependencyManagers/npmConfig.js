@@ -49,6 +49,20 @@ function getFileHash(filePath, installOptions) {
 				toHash.repo = json.repository.url;
 		}
 
+		// we need to use a combo of lock file and package.json to avoid conflict situation
+		if(filePath.indexOf('package-lock.json')!==-1)
+    {
+      var packageJsonFilePath=filePath.replace('package-lock.json', 'package.json');
+      var jsonMain = JSON.parse(fs.readFileSync(packageJsonFilePath));
+      toHash.dependenciesMain=jsonMain.dependencies;
+      if (jsonMain.devDependencies) {
+        toHash.devDependenciesMain = jsonMain.devDependencies;
+      }
+      if (jsonMain.repository && jsonMain.repository.url) {
+        toHash.repo = jsonMain.repository.url;
+      }
+    }
+
 		//important to add install options to this object a --production flag would cause a different node_modules structure.
 
 		if (installOptions) {
