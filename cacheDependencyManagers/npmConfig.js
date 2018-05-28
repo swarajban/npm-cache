@@ -94,6 +94,10 @@ function getNpmVersion() {
 }
 
 function getInstallCommand() {
+  if(options.ci && !semver.satisfies(getNpmVersion(),'>= 5.7.0'))
+  {
+    throw new Error('npm ci not available for your node version, please update npm or remove ci flag');
+  }
 	return options.ci ? 'npm ci' : 'npm install';
 }
 
