@@ -29,7 +29,7 @@ function getFileHash(filePath) {
     devDependencies: json.devDependencies,
     overrides: json.overrides
   }));
-};
+}
 
 function setOptions(opts) {
 	if (!opts) {

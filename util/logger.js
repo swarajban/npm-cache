@@ -15,5 +15,5 @@ exports.logSuccess = function (message) {
 };
 
 exports.logRunning = function (message) {
-  console.log(logSymbols.success,  clic.white.bgCyan(message, "..."));
+  console.log(logSymbols.success,  clic.white.bgCyan(message, '...'));
 };

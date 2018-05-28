@@ -142,23 +142,23 @@ CacheDependencyManager.prototype.archiveDependencies = function (cacheDirectory,
     self.cacheLogInfo('installed and archived dependencies');
 
     if(self.config.useSymlink) {
-      console.log('creating symlink to have ' + installedDirectory + ' to point to ' + cachePath)
+      console.log('creating symlink to have ' + installedDirectory + ' to point to ' + cachePath);
       //'dir' requires admin rights on windows, junction works. This argument is ignored by other platforms
-      fs.symlinkSync(cachePath, installedDirectory, 'junction')
+      fs.symlinkSync(cachePath, installedDirectory, 'junction');
 
       //some modules might need to find files based on a relative path which can be a problem, so we need to create a reverse symlink
       if (self.config.reverseSymlink) {
-        var reverseCacheSymLink = path.resolve(cachePath, '../', self.config.reverseSymlink)
-        var projectDirectory = path.resolve(installedDirectory, '../')
+        var reverseCacheSymLink = path.resolve(cachePath, '../', self.config.reverseSymlink);
+        var projectDirectory = path.resolve(installedDirectory, '../');
         if (fs.existsSync(reverseCacheSymLink) && fs.lstatSync(reverseCacheSymLink).isSymbolicLink()) {
           self.cacheLogInfo(reverseCacheSymLink + ' exists already and is a symlink - removing it');
           fs.removeSync(reverseCacheSymLink);
         }
         self.cacheLogInfo('creating reverse symlink ' + reverseCacheSymLink + ' to point to ' + projectDirectory);
-        fs.symlinkSync(projectDirectory, reverseCacheSymLink, 'junction')
+        fs.symlinkSync(projectDirectory, reverseCacheSymLink, 'junction');
       }
     } else {
-        console.log('not creating symlink')
+        console.log('not creating symlink');
     }
 
     onFinally();
@@ -178,8 +178,8 @@ CacheDependencyManager.prototype.archiveDependencies = function (cacheDirectory,
   var installedDirectoryStream = fstream.Reader({path: installedDirectory}).on('error', onError);
   if(this.config.useSymlink) {
     self.cacheLogInfo('moving ' + installedDirectory + ' to ' + tmpName);
-    fs.renameSync(installedDirectory, tmpName)
-    onEnd()
+    fs.renameSync(installedDirectory, tmpName);
+    onEnd();
   }
   // TODO: speed this up
   else if (this.config.noArchive) {
@@ -224,7 +224,7 @@ CacheDependencyManager.prototype.installCachedDependencies = function (cachePath
       self.cacheLogInfo('launching post cached install command: ' + self.config.postCachedInstallCommand);
       var postCachedInstallCommand = self.config.postCachedInstallCommand.trim();
       if (shell.exec(postCachedInstallCommand).code !== 0) {
-          error = 'error running ' + self.config.postCachedInstallCommand;
+          var error = 'error running ' + self.config.postCachedInstallCommand;
           self.cacheLogError(error);
       } else {
           self.cacheLogInfo('post cached installed command (' + self.config.postCachedInstallCommand + ') done for ' + self.config.cliName);
@@ -247,31 +247,30 @@ CacheDependencyManager.prototype.installCachedDependencies = function (cachePath
         .on('end', onEnd)
         .pipe(fstream.Writer(targetPath));
     } else {
-      var cachePathSymLink = path.resolve(cachePath, 'node_modules')
+      var cachePathSymLink = path.resolve(cachePath, 'node_modules');
       this.cacheLogInfo('creating symlink ' + installDirectory + ' to point to ' + cachePathSymLink);
       //'dir' requires admin rights on windows, junction works. This argument is ignored by other platforms
-      fs.symlinkSync(cachePathSymLink, installDirectory, 'junction')
+      fs.symlinkSync(cachePathSymLink, installDirectory, 'junction');
 
       //some modules might need to find files based on a relative path which can be a problem, so we need to create a reverse symlink
       if (this.config.reverseSymlink) {
-        var reverseCacheSymLink = path.resolve(cachePath, '../', this.config.reverseSymlink)
-        var projectDirectory = path.resolve(installDirectory, '../')
+        var reverseCacheSymLink = path.resolve(cachePath, '../', this.config.reverseSymlink);
+        var projectDirectory = path.resolve(installDirectory, '../');
         if (fs.existsSync(reverseCacheSymLink) && fs.lstatSync(reverseCacheSymLink).isSymbolicLink()) {
           this.cacheLogInfo(reverseCacheSymLink + ' exists already and is a symlink - removing it');
           fs.removeSync(reverseCacheSymLink);
         }
         this.cacheLogInfo('creating reverse symlink ' + reverseCacheSymLink + ' to point to ' + projectDirectory);
-        fs.symlinkSync(projectDirectory, reverseCacheSymLink, 'junction')
+        fs.symlinkSync(projectDirectory, reverseCacheSymLink, 'junction');
       }
 
-      onEnd()
+      onEnd();
     }
   }
 };
 
 
 CacheDependencyManager.prototype.loadDependencies = function (callback) {
-  var self = this;
   var error = null;
 
   // Check if config file for dependency manager exists
