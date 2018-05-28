@@ -11,6 +11,7 @@ var semver = require('semver');
 var options = {};
 var npmVersion;
 
+
 // Returns path to configuration file for npm. Uses
 // - npm-shrinkwrap.json if it exists; otherwise,
 // - package-lock.json if it exists and npm >= 5; otherwise,
