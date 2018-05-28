@@ -4,8 +4,9 @@ var fs = require('fs');
 var path = require('path');
 var shell = require('shelljs');
 var logger = require('../util/logger');
-var md5 = require('md5');
+var md5 = require('../util/md5');
 var isUsingComposerLock = null;
+var options = {};
 
 // Returns path to configuration file for composer. Uses
 // composer.lock if it exists; otherwise,
@@ -73,7 +74,14 @@ function getFileHash(filePath) {
     packagesDev: json['require-dev'],
     repos: json.repositories
   }));
-};
+}
+
+function setOptions(opts) {
+	if (!opts) {
+		return;
+	}
+	Object.assign(options, opts);
+}
 
 module.exports = {
   cliName: 'composer',
@@ -81,5 +89,6 @@ module.exports = {
   configPath: getComposerConfigPath(),
   installDirectory: getComposerInstallDirectory(),
   installCommand: 'composer install',
-  getFileHash: getFileHash
+  getFileHash: getFileHash,
+  setOptions: setOptions
 };

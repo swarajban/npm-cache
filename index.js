@@ -2,10 +2,11 @@
 'use strict';
 
 var fs = require('fs-extra');
-var path = require('path');
+var path = require('upath');
 var parser = require('nomnom');
 var async = require('async');
 var rimraf = require('rimraf');
+var util = require('util');
 
 var logger = require('./util/logger');
 var ParseUtils = require('./util/parseUtils');
@@ -52,6 +53,25 @@ var main = function () {
     help: 'when installing a new dependency set, those dependencies will be stored uncompressed. This requires more disk space but notably increases performance',
     flag: true
   });
+  parser.option('ci', {
+    abbr: 'j',
+    help: 'only works with npm. whether to run npm ci or npm install',
+    flag: true
+  });
+  parser.option('useSymlink', {
+    abbr: 's',
+    help: 'when using previously cached dependencies, create a symbolic link instead of copying all the files. Must be used with. This enforce the noArchive option',
+    flag: true
+  });
+  parser.option('reverseSymlink', {
+    abbr: 'a',
+    help: 'when using symlinks, create a reverse symlink to allow modules in the cache directory to find files in the project directory',
+  });
+  parser.option('cleanOldCachedDepsSince', {
+    default: 0,
+    abbr: 'o',
+    help: 'cleaning automatically old cached deps - enter a number of days to clean cached deps not used since more than x days',
+  });
 
   parser.option('version', {
     abbr: 'v',
@@ -72,10 +92,12 @@ var main = function () {
     '\tnpm-cache install\t# try to install npm, bower, and composer components',
     '\tnpm-cache install bower\t# install only bower components',
     '\tnpm-cache install bower npm\t# install bower and npm components',
-    '\tnpm-cache install bower --allow-root composer --dry-run\t# install bower with allow-root, and composer with --dry-run',
     '\tnpm-cache install --cacheDirectory /home/cache/ bower \t# install components using /home/cache as cache directory',
     '\tnpm-cache install --forceRefresh  bower\t# force installing dependencies from package manager without cache',
     '\tnpm-cache install --noArchive npm\t# do not compress/archive the cached dependencies',
+    '\tnpm-cache install --ci npm\t# uses npm ci to install dependencies',
+    '\tnpm-cache install npm --production -msvs_version=2013\t# add args to npm installer',
+    '\tnpm-cache install npm --production -msvs_version=2013 bower --silent\t# add args to npm installer and bower',
     '\tnpm-cache clean\t# cleans out all cached files in cache directory',
     '\tnpm-cache hash\t# reports the current working hash'
   ];
@@ -101,6 +123,10 @@ var prepareCacheDirectory = function (cacheDirectory) {
 var installDependencies = function (opts) {
   prepareCacheDirectory(opts.cacheDirectory);
 
+  if (opts.cleanOldCachedDepsSince) {
+    cleanCache(opts);
+  }
+
   var availableManagers = CacheDependencyManager.getAvailableManagers();
   var managerArguments = ParseUtils.getManagerArgs();
   var managers = Object.keys(managerArguments);
@@ -111,14 +137,17 @@ var installDependencies = function (opts) {
       var managerConfig = require(availableManagers[managerName]);
       managerConfig.cacheDirectory = opts.cacheDirectory;
       managerConfig.forceRefresh = opts.forceRefresh;
-      managerConfig.noArchive = opts.noArchive;
+      managerConfig.noArchive = opts.noArchive || opts.useSymlink;
+      managerConfig.useSymlink = opts.useSymlink;
+      managerConfig.reverseSymlink = opts.reverseSymlink;
       managerConfig.installOptions = managerArguments[managerName];
+      managerConfig.setOptions({ci: opts.ci});
       var manager = new CacheDependencyManager(managerConfig);
       manager.loadDependencies(callback);
     },
     function onInstalled (error) {
       if (error === null) {
-        logger.logInfo('successfully installed all dependencies');
+        logger.logSuccess('successfully installed all dependencies');
         process.exit(0);
       } else {
         logger.logError('error installing dependencies');
@@ -145,7 +174,6 @@ var reportHash = function (opts) {
       managerConfig.cacheDirectory = opts.cacheDirectory;
 
       var hash = managerConfig.getFileHash(managerConfig.configPath);
-      console.log(hash);
     }
   );
 };
@@ -184,14 +212,32 @@ var cleanCache = function (opts) {
   prepareCacheDirectory(opts.cacheDirectory);
 
   var cachedFileList = getCachedFileList(opts.cacheDirectory);
+  var cachedFolderCleaned = 0;
   cachedFileList.forEach(
     function (filePath) {
-      rimraf.sync(filePath);
-      // fs.unlinkSync(filePath);
+
+      var mustCleanFolder = true;
+
+      //prevent cleaning cache deps if cleanOldCachedDepsSince has been specified and the cached deps are recent
+      if (opts.cleanOldCachedDepsSince) {
+        var stats = fs.lstatSync(filePath);
+        var mtime = new Date(util.inspect(stats.mtime));
+        var daysElapsed = (new Date() - mtime)/1000/60/60/24;
+        logger.logInfo(filePath + ' is ' + daysElapsed + ' days old');
+        if (daysElapsed < opts.cleanOldCachedDepsSince) {
+          mustCleanFolder = false;
+        }
+      }
+
+      if (mustCleanFolder) {
+        logger.logInfo('cleaning ' + filePath);
+        cachedFolderCleaned++;
+        rimraf.sync(filePath);
+      }
     }
   );
 
-  logger.logInfo('cleaned ' + cachedFileList.length + ' files from cache directory');
+  logger.logInfo('cleaned ' + cachedFolderCleaned + ' files from cache directory');
 };
 
 

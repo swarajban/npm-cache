@@ -3,8 +3,9 @@
 var path = require('path');
 var shell = require('shelljs');
 var fs = require('fs');
-var md5 = require('md5');
+var md5 = require('../util/md5');
 var logger = require('../util/logger');
+var options = {};
 
 // call these two upfront so log messages emitted by them only show up once
 var configFile = getConfigFile();
@@ -107,6 +108,13 @@ function getConfigurationHash() {
     }));
 }
 
+function setOptions(opts) {
+	if (!opts) {
+		return;
+	}
+	Object.assign(options, opts);
+}
+
 module.exports = {
     cliName: 'jspm',
     getCliVersion: getJspmVersion,
@@ -114,5 +122,6 @@ module.exports = {
     installDirectory: installDirectory,
     addToArchiveAndRestore: configFile,
     installCommand: 'jspm install',
-    getFileHash: getConfigurationHash
+    getFileHash: getConfigurationHash,
+    setOptions: setOptions
 };
