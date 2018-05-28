@@ -43,7 +43,6 @@
     "fstream": "1.0.8",
     "lodash": "4.17",
     "log-symbols": "^1.0.2",
-    "md5": "2.2",
     "nomnom": "1.8.1",
     "rimraf": "^2.5.4",
     "semver": "^5.5.0",

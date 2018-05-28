@@ -3,7 +3,7 @@
 var path = require('path');
 var shell = require('shelljs');
 var fs = require('fs');
-var md5 = require('md5');
+var md5 = require('../util/md5');
 var logger = require('../util/logger');
 var isUsingYarnLock = null;
 var options = {};
@@ -43,9 +43,10 @@ function getYarnPostCachedInstallCommand() {
   var packagePath = path.resolve(process.cwd(), 'package.json');
   var json = JSON.parse(fs.readFileSync(packagePath));
   if (json.scripts.prepublish)
+  {
     return 'npm run prepublish';
-  else
-    return null;
+  }
+  return null;
 }
 
 function setOptions(opts) {

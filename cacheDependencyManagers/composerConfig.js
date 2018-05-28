@@ -4,7 +4,7 @@ var fs = require('fs');
 var path = require('path');
 var shell = require('shelljs');
 var logger = require('../util/logger');
-var md5 = require('md5');
+var md5 = require('../util/md5');
 var isUsingComposerLock = null;
 var options = {};
 
@@ -74,7 +74,7 @@ function getFileHash(filePath) {
     packagesDev: json['require-dev'],
     repos: json.repositories
   }));
-};
+}
 
 function setOptions(opts) {
 	if (!opts) {

@@ -6,7 +6,7 @@ var path = require('upath');
 var parser = require('nomnom');
 var async = require('async');
 var rimraf = require('rimraf');
-var util = require('util')
+var util = require('util');
 
 var logger = require('./util/logger');
 var ParseUtils = require('./util/parseUtils');
@@ -230,7 +230,7 @@ var cleanCache = function (opts) {
       }
 
       if (mustCleanFolder) {
-        logger.logInfo("cleaning " + filePath);
+        logger.logInfo('cleaning ' + filePath);
         cachedFolderCleaned++;
         rimraf.sync(filePath);
       }
