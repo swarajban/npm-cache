@@ -1,7 +1,7 @@
-0.9.0
+0.8.3
 -----
-launching npm run prepublish after installing cached dependencies if they exist
+Use semver for checking npm version, refactor, use node internal md5, refactor, check if `npm ci` available.
 
-0.8.7
+0.8.2
 -----
-FIxing a bug preventing deletion of the symbolic link when the symbolic lynk is not pointing to anything
+Use both package-lock and package.json for creating hash
