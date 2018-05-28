@@ -5,14 +5,11 @@ var shell = require('shelljs');
 var fs = require('fs');
 var md5 = require('md5');
 var logger = require('../util/logger');
+var semver = require('semver');
 
 //buffer clientVersion retrieving as it takes significant time
-var npmVersion = undefined;
 var options = {};
-
-function getNpmMajorVersion() {
-    return parseInt(getNpmVersion().split(/\./)[0] || 0, 10);
-}
+var npmVersion;
 
 // Returns path to configuration file for npm. Uses
 // - npm-shrinkwrap.json if it exists; otherwise,
@@ -25,7 +22,7 @@ var getNpmConfigPath = function () {
     return shrinkWrapPath;
   }
 
-  if (getNpmMajorVersion() >= 5) {
+  if (semver.satisfies(getNpmVersion(),' >= 5')) {
       var packageLockPath = path.resolve(process.cwd(), 'package-lock.json');
       if (fs.existsSync(packageLockPath)) {
           logger.logInfo('[npm] using package-lock.json instead of package.json');
@@ -76,14 +73,14 @@ function getFileHash(filePath, installOptions) {
 }
 
 function getNpmPostCachedInstallCommand() {
-	var npmMajorVersion = getNpmMajorVersion();
-
 	//npm run prepublish is only called for npm <= 4
-	if (npmMajorVersion <= 4) {
+	if (semver.satisfies(getNpmVersion(),'<= 4')) {
 		var packagePath = path.resolve(process.cwd(), 'package.json');
 		var json = JSON.parse(fs.readFileSync(packagePath));
 		if (json.scripts.prepublish)
-			return 'npm run prepublish';
+    {
+      return 'npm run prepublish';
+    }
 	}
 
   return null;
@@ -94,15 +91,6 @@ function getNpmVersion() {
 		npmVersion = shell.exec('npm --version', {silent: true}).output.trim();
 	}
 	return npmVersion;
-}
-
-function getNpmMajorVersion() {
-	var npmMajorVersion = getNpmVersion();
-	var pointPosition = npmMajorVersion.indexOf('.');
-	if (pointPosition != -1) {
-		npmMajorVersion = npmMajorVersion.substring(0,pointPosition);
-	}
-	return npmMajorVersion;
 }
 
 function getInstallCommand() {
