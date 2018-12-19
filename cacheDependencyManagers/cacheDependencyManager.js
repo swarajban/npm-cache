@@ -9,7 +9,7 @@ var tar = require('tar-fs');
 var fstream = require('fstream');
 var md5 = require('md5');
 var tmp = require('tmp');
-var _ = require('lodash');
+var _ = require('lodash/core');
 var zlib = require('zlib');
 
 var cacheVersion = '1';
