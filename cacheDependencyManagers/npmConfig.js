@@ -39,6 +39,37 @@ var getNpmConfigPath = function () {
 
 function getFileHash(filePath) {
   var json = JSON.parse(fs.readFileSync(filePath));
+
+  // Detect if we are reading a package-lock.json file and retrieve the
+  // dependencies depending on the lockfile version. In version 1, no packages
+  // object. Version 2 and 3 have a packages object to describe the project's
+  // metadata, including its (dev) dependencies.
+  if (json.lockfileVersion) {
+    var lockfileVersion = json.lockfileVersion;
+    logger.logInfo(`Generating hash from package-lock.json version ${lockfileVersion}`);
+
+    switch (lockfileVersion) {
+      case 1:
+        return md5(JSON.stringify({
+          dependencies: json.dependencies,
+          devDependencies: json.devDependencies
+        }));
+      case 2:
+      case 3:
+        var packages = json.packages[""];
+
+        return md5(JSON.stringify({
+          dependencies: packages.dependencies,
+          devDependencies: packages.devDependencies
+        }));
+      default:
+        logger.logError('Unsupported lock file version. Open a pull request if you think it should be.');
+        return;
+    }
+  }
+
+  logger.logInfo(`Hash generated from package.json`);
+  
   return md5(JSON.stringify({
     dependencies: json.dependencies,
     devDependencies: json.devDependencies
