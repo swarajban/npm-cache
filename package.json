@@ -1,6 +1,6 @@
 {
   "name": "npm-cache",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "cache dependency manager installs to local machine",
   "main": "index.js",
   "repository": {
