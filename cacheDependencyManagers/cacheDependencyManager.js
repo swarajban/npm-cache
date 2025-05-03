@@ -1,5 +1,6 @@
 'use strict';
 
+var child_process = require('child_process');
 var fs = require('fs-extra');
 var path = require('path');
 var logger = require('../util/logger');
@@ -138,7 +139,10 @@ CacheDependencyManager.prototype.archiveDependencies = function (cacheDirectory,
     installedDirectoryStream
       .on('end', onEnd)
       .pipe(fstream.Writer({path: tmpName, type: 'Directory'}));
-
+  } else if (this.config.systemTar) {
+    var tarProcess = child_process.spawn('tar', ['-C', installedDirectory, '-czf', tmpName, '.']);
+    tarProcess.stderr.on('data', onError);
+    tarProcess.on('close', onEnd);
   } else {
     tar.pack(installedDirectory)
       .pipe(zlib.createGzip())
@@ -172,11 +176,18 @@ CacheDependencyManager.prototype.installCachedDependencies = function (cachePath
   }
 
   if (compressedCacheExists) {
-    fs.createReadStream(cachePath)
-      .pipe(zlib.createGunzip())
-      .pipe(tar.extract(installDirectory))
-      .on('error', onError)
-      .on('finish', onEnd);
+    if (this.config.systemTar) {
+      fs.mkdirsSync(installDirectory);
+      var tarProcess = child_process.spawn('tar', ['-C', installDirectory, '-xzf', cachePath]);
+      tarProcess.stderr.on('data', onError);
+      tarProcess.on('close', onEnd);
+    } else {
+      fs.createReadStream(cachePath)
+        .pipe(zlib.createGunzip())
+        .pipe(tar.extract(installDirectory))
+        .on('error', onError)
+        .on('finish', onEnd);
+    }
   } else {
     fstream.Reader(cachePath)
         .on('error', onError)
