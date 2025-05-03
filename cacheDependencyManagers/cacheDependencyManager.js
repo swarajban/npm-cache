@@ -16,6 +16,8 @@ var cacheVersion = '1';
 
 function CacheDependencyManager (config) {
   this.config = config;
+  this.config.log = this.config.log || {};
+  this.logName = this.config.log.name || this.config.cliName;
 }
 
 // Given a path relative to process' current working directory,
@@ -33,11 +35,11 @@ var getFileBackupFilename = function (file) {
 };
 
 CacheDependencyManager.prototype.cacheLogInfo = function (message) {
-  logger.logInfo('[' + this.config.cliName + '] ' + message);
+  logger.logInfo('[' + this.logName + '] ' + message);
 };
 
 CacheDependencyManager.prototype.cacheLogError = function (error) {
-  logger.logError('[' + this.config.cliName + '] ' + error);
+  logger.logError('[' + this.logName + '] ' + error);
 };
 
 
@@ -50,7 +52,7 @@ CacheDependencyManager.prototype.installDependencies = function () {
     error = 'error running ' + this.config.installCommand;
     this.cacheLogError(error);
   } else {
-    this.cacheLogInfo('installed ' + this.config.cliName + ' dependencies, now archiving');
+    this.cacheLogInfo('installed ' + this.logName + ' dependencies, now archiving');
   }
   return error;
 };
@@ -190,32 +192,37 @@ CacheDependencyManager.prototype.loadDependencies = function (callback) {
   var self = this;
   var error = null;
 
-  // Check if config file for dependency manager exists
-  if (! fs.existsSync(this.config.configPath)) {
-    this.cacheLogInfo('Dependency config file ' + this.config.configPath + ' does not exist. Skipping install');
-    callback(null);
-    return;
+  if(this.config.configPath) {
+    // Check if config file for dependency manager exists
+    if (! fs.existsSync(this.config.configPath)) {
+      this.cacheLogInfo('Dependency config file ' + this.config.configPath + ' does not exist. Skipping install');
+      callback(null);
+      return;
+    }
+    this.cacheLogInfo('config file exists');
   }
-  this.cacheLogInfo('config file exists');
 
-  // Check if package manger CLI is installed
-  try {
-    which.sync(this.config.cliName);
-    this.cacheLogInfo('cli exists');
-  }
-  catch (e) {
-    error = 'Command line tool ' + this.config.cliName + ' not installed';
-    this.cacheLogError(error);
-    callback(error);
-    return;
+  if(this.config.cliName) {
+    // Check if package manger CLI is installed
+    try {
+      which.sync(this.config.cliName);
+      this.cacheLogInfo('cli exists');
+    }
+    catch (e) {
+      error = 'Command line tool ' + this.config.cliName + ' not installed';
+      this.cacheLogError(error);
+      callback(error);
+      return;
+    }
   }
 
   // Get hash of dependency config file
   var hash = this.config.getFileHash(this.config.configPath);
   hash = md5(cacheVersion + hash);
-  this.cacheLogInfo('hash of ' + this.config.configPath + ': ' + hash);
+  this.cacheLogInfo('hash of ' + (this.config.log.hashSource || this.config.configPath) + ': ' + hash);
   // cachePath is absolute path to where local cache of dependencies is located
-  var cacheDirectory = path.resolve(this.config.cacheDirectory, this.config.cliName, this.config.getCliVersion());
+  var cacheSubdirectory = this.config.cacheSubdirectory ? [this.config.cacheSubdirectory] : [this.config.cliName, this.config.getCliVersion()];
+  var cacheDirectory = path.resolve.apply(null, [this.config.cacheDirectory].concat(cacheSubdirectory));
   var cachePathArchive = path.resolve(cacheDirectory, hash + '.tar.gz');
   var cachePathNotArchived = path.resolve(cacheDirectory, hash);
 

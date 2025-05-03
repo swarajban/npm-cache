@@ -41,9 +41,15 @@ exports.getNpmCacheArgs = function () {
  *
  * @return {Object} managerArgs
  */
-exports.getManagerArgs = function () {
+exports.getManagerArgs = function (opts) {
   var managers = {};
   var allArguments = process.argv.slice(3); // strip off 'node', 'index.js', and 'install' from arguments list
+  if(opts.manager) { // will be 'custom' if user runs "npm-cache run {config}" command
+    opts.configPath = allArguments.pop();
+    managers[opts.manager] = '';
+    return managers;
+  }
+
   var availableManagers = CacheDependencyManager.getAvailableManagers();
   var currManager = null;
 
@@ -55,7 +61,11 @@ exports.getManagerArgs = function () {
         managers[argument] = '';
         currManager = argument;
       } else if (currManager !== null) {
-        managers[currManager] += argument + ' ';
+        if(currManager === 'custom' && managers[currManager] === '') {
+          opts.configPath = argument;
+        } else {
+          managers[currManager] += argument + ' ';
+        }
       }
     }
   );

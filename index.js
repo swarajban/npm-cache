@@ -24,6 +24,18 @@ var main = function () {
     })
     .help('install specified dependencies');
 
+  parser.command('run')
+    .callback(function(opts) {
+      installDependencies(Object.assign({ manager: 'custom' }, opts));
+    })
+    .option('forceRefresh', {
+      abbr: 'r',
+      flag: true,
+      default: false,
+      help: 'ignore cache'
+    })
+    .help('run npm-cache using specified config file');
+
   parser.command('clean')
     .callback(cleanCache)
     .help('clear cache directory');
@@ -102,18 +114,24 @@ var installDependencies = function (opts) {
   prepareCacheDirectory(opts.cacheDirectory);
 
   var availableManagers = CacheDependencyManager.getAvailableManagers();
-  var managerArguments = ParseUtils.getManagerArgs();
-  var managers = Object.keys(managerArguments);
+  var managerArguments = ParseUtils.getManagerArgs(opts);
+  var managers = opts.manager ? [opts.manager] : Object.keys(managerArguments);
 
   async.each(
     managers,
     function startManager (managerName, callback) {
+      var managerCommonConfig = {
+        cacheDirectory: opts.cacheDirectory,
+        forceRefresh: opts.forceRefresh,
+        noArchive: opts.noArchive,
+        configPath: opts.configPath,
+        installOptions: managerArguments[managerName]
+      };
       var managerConfig = require(availableManagers[managerName]);
-      managerConfig.cacheDirectory = opts.cacheDirectory;
-      managerConfig.forceRefresh = opts.forceRefresh;
-      managerConfig.noArchive = opts.noArchive;
-      managerConfig.installOptions = managerArguments[managerName];
-      var manager = new CacheDependencyManager(managerConfig);
+      if(typeof managerConfig === 'function') {
+        managerConfig = managerConfig(managerCommonConfig);
+      }
+      var manager = new CacheDependencyManager(Object.assign(managerCommonConfig, managerConfig));
       manager.loadDependencies(callback);
     },
     function onInstalled (error) {
@@ -130,8 +148,8 @@ var installDependencies = function (opts) {
 
 var reportHash = function (opts) {
   var availableManagers = CacheDependencyManager.getAvailableManagers();
-  var managerArguments = ParseUtils.getManagerArgs();
-  var managers = Object.keys(managerArguments);
+  var managerArguments = ParseUtils.getManagerArgs(opts);
+  var managers = opts.manager ? [opts.manager] : Object.keys(managerArguments);
 
   if (managers.length > 1) {
     logger.logError('can only calculate hash for one dependency manager at a time');
